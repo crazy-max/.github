@@ -28,7 +28,7 @@ jobs:
           retries: 3
           script: |
             let res = {};
-            const [owner, repo] = 'docker/buildx'.split('/');
+            const [owner, repo] = '${{ inputs.repository }}'.split('/');
             core.info(`Fetching releases for ${owner}/${repo}`);
 
             const latestRelease = await github.rest.repos.getLatestRelease({
