@@ -32,3 +32,10 @@ jobs:
         name: Check file
         run: |
           jq . releases.json
+      -
+        name: Upload releases.json
+        uses: actions/upload-artifact@v3
+        with:
+          name: releases-json
+          path: releases.json
+          if-no-files-found: error
