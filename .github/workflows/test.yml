@@ -1,0 +1,34 @@
+name: test
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  releases-json:
+    uses: ./.github/workflows/releases-json.yml
+    with:
+      repository: docker/buildx
+    secrets: inherit
+
+  releases-json-file:
+    runs-on: ubuntu-latest
+    needs:
+      - releases-json
+    steps:
+      -
+        name: Create releases.json file
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            await fs.writeFileSync('releases.json', `${{ needs.releases-json.outputs.releases }}`);
+      -
+        name: Check file
+        run: |
+          jq . releases.json
