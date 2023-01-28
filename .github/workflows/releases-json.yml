@@ -1,0 +1,59 @@
+name: releases-json
+
+on:
+  workflow_call:
+    inputs:
+      repository:
+        required: true
+        type: string
+    outputs:
+      releases:
+        description: GitHub Releases JSON
+        value: ${{ jobs.generate.outputs.releases }}
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    outputs:
+      releases: ${{ steps.generate.outputs.releases }}
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Generate
+        id: generate
+        uses: actions/github-script@v6
+        with:
+          retries: 3
+          script: |
+            let res = {};
+            const [owner, repo] = 'docker/buildx'.split('/');
+            core.info(`Fetching releases for ${owner}/${repo}`);
+
+            const latestRelease = await github.rest.repos.getLatestRelease({
+              owner,
+              repo,
+            });
+            res['latest'] = {
+              id: latestRelease.data.id,
+              tag_name: latestRelease.data.tag_name,
+              html_url: latestRelease.data.html_url,
+              assets: latestRelease.data.assets.map(asset => asset.browser_download_url),
+            };
+
+            const releases = await github.paginate(github.rest.repos.listReleases.endpoint.merge({
+              owner,
+              repo,
+            }));
+            for (const release of releases) {
+              res[release.tag_name] = {
+                id: release.id,
+                tag_name: release.tag_name,
+                html_url: release.html_url,
+                assets: release.assets.map(asset => asset.browser_download_url),
+              };
+            }
+
+            core.debug(JSON.stringify(res, null, 2));
+            core.setOutput('releases', JSON.stringify(res));
