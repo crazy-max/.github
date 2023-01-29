@@ -25,6 +25,8 @@ jobs:
     uses: crazy-max/.github/.github/workflows/releases-json.yml@main
     with:
       repository: docker/buildx
+      artifact_name: buildx-releases-json
+      filename: buildx-releases.json
     secrets: inherit
 
   releases-json-file:
@@ -33,14 +35,13 @@ jobs:
       - releases-json
     steps:
       -
-        name: Create releases.json file
-        uses: actions/github-script@v6
+        name: Download
+        uses: actions/download-artifact@v3
         with:
-          script: |
-            const fs = require('fs');
-            await fs.writeFileSync('releases.json', `${{ needs.releases-json.outputs.releases }}`);
+          name: buildx-releases-json
+          path: .
       -
         name: Check file
         run: |
-          jq . releases.json
+          jq . buildx-releases.json
 ```

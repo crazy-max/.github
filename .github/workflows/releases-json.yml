@@ -6,6 +6,14 @@ on:
       repository:
         required: true
         type: string
+      artifact_name:
+        required: false
+        type: string
+        default: 'releases-json'
+      filename:
+        required: false
+        type: string
+        default: 'releases.json'
     outputs:
       releases:
         description: GitHub Releases JSON
@@ -24,6 +32,8 @@ jobs:
         with:
           retries: 3
           script: |
+            const fs = require('fs');
+
             let res = {};
             const [owner, repo] = '${{ inputs.repository }}'.split('/');
             core.info(`Fetching releases for ${owner}/${repo}`);
@@ -54,3 +64,11 @@ jobs:
 
             core.debug(JSON.stringify(res, null, 2));
             core.setOutput('releases', JSON.stringify(res));
+            await fs.writeFileSync('${{ inputs.filename }}', JSON.stringify(res));
+      -
+        name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: ${{ inputs.filename }}
+          if-no-files-found: error
