@@ -62,9 +62,12 @@ jobs:
               };
             }
 
-            core.debug(JSON.stringify(res, null, 2));
             core.setOutput('releases', JSON.stringify(res));
             await fs.writeFileSync('${{ inputs.filename }}', JSON.stringify(res));
+      -
+        name: Check file
+        run: |
+          jq . ${{ inputs.filename }}
       -
         name: Upload artifact
         uses: actions/upload-artifact@v3
