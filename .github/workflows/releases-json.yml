@@ -63,7 +63,7 @@ jobs:
             }
 
             core.setOutput('releases', JSON.stringify(res));
-            await fs.writeFileSync('${{ inputs.filename }}', JSON.stringify(res));
+            await fs.writeFileSync('${{ inputs.filename }}', JSON.stringify(res, null, 2));
       -
         name: Check file
         run: |
