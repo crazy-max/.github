@@ -36,7 +36,7 @@ runs:
 
               await exec.exec('docker', ["run", "-d",
                 "--privileged",
-                "--name=buildkit-k3s",
+                "--name=install-k3s-action",
                 "-e", "K3S_KUBECONFIG_OUTPUT="+kubeconfig,
                 "-e", "K3S_KUBECONFIG_MODE=666",
                 "-v", "${{ env.TEMPDIR }}:${{ env.TEMPDIR }}",
@@ -44,7 +44,8 @@ runs:
                 "-p", "80:80",
                 "-p", "443:443",
                 "-p", "8080:8080",
-                "rancher/k3s:${{ inputs.version }}", "server"
+                "rancher/k3s:${{ inputs.version }}",
+                "server"
               ]);
               await wait(10000);
 
