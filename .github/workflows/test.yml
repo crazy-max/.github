@@ -35,3 +35,15 @@ jobs:
         name: Check file
         run: |
           jq . buildx-releases.json
+
+  install-k3s:
+    runs-on: ubuntu-20.04
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Install k3s
+        uses: ./.github/actions/install-k3s
+        with:
+          version: v1.21.2-k3s1
