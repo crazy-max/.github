@@ -46,7 +46,7 @@ jobs:
               id: latestRelease.data.id,
               tag_name: latestRelease.data.tag_name,
               html_url: latestRelease.data.html_url,
-              assets: latestRelease.data.assets.map(asset => asset.browser_download_url),
+              assets: latestRelease.data.assets.map(asset => asset.browser_download_url).sort(),
             };
 
             const releases = await github.paginate(github.rest.repos.listReleases.endpoint.merge({
@@ -58,7 +58,7 @@ jobs:
                 id: release.id,
                 tag_name: release.tag_name,
                 html_url: release.html_url,
-                assets: release.assets.map(asset => asset.browser_download_url),
+                assets: release.assets.map(asset => asset.browser_download_url).sort(),
               };
             }
 
