@@ -1,0 +1,69 @@
+# https://help.github.com/en/articles/metadata-syntax-for-github-actions
+name: 'Go test annotations'
+description: 'Annotates failed tests'
+
+inputs:
+  directory:
+    description: 'Test reports dir'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    -
+      uses: actions/github-script@v6
+      with:
+        script: |
+          await core.group(`Install npm deps`, async () => {
+            await exec.exec('npm', ['install', 'line-by-line']);
+          });
+    -
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const lineReader = require('line-by-line');
+          const testRegex = /(\s*[\w\d]+_test.go:\d+:)(.*?)(---\sFAIL:.*)/gs;
+          let tests = {};
+          const globber = await glob.create(`${{ inputs.directory }}/**/*.json`);
+          for await (const jsonReport of globber.globGenerator()) {
+            let lr = new lineReader(jsonReport);
+            lr.on('line', function(line) {
+              const currentLine = JSON.parse(line);
+              const testName = currentLine.Test;
+              let output = currentLine.Output;
+              if (!testName || !output) {
+                return;
+              }
+              const packageName = currentLine.Package.split("/").slice(3).join("/");
+              const key = `${packageName}/${testName}`;
+              if (!tests.hasOwnProperty(key)) {
+                tests[key] = {
+                  name: testName,
+                  package: packageName,
+                  output: output
+                };
+              } else {
+                tests[key].output += output;
+              }
+            });
+            lr.on('end', function() {
+              for (const [key, test] of Object.entries(tests)) {
+                if (!test.output.includes("FAIL") || !test.output.includes("_test.go")) {
+                  continue;
+                }
+                var result;
+                while ((result = testRegex.exec(test.output)) !== null) {
+                  const parts = result[0].split(":");
+                  const file = `${test.package}/${parts[0].trimStart()}`;
+                  const lineNumber = parts[1];
+                  core.startGroup(key);
+                  core.error(test.output, {
+                    title: `Failed: ${key}`,
+                    file: file,
+                    startLine: lineNumber
+                  });
+                  core.endGroup();
+                }
+              }
+            });
+          }
