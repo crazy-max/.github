@@ -10,11 +10,42 @@ that can be used in your own repositories.
 ___
 
 * [Actions](#actions)
+  * [`gotest-annotations`](#gotest-annotations)
   * [`install-k3s`](#install-k3s)
 * [Reusable workflows](#reusable-workflows)
   * [`releases-json`](#releases-json)
 
 ## Actions
+
+### `gotest-annotations`
+
+[`gotest-annotations` composite action](.github/actions/gotest-annotations/action.yml)
+generates GitHub annotations for generated Go JSON test reports.
+
+```yaml
+name: ci
+
+on:
+  push:
+
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Test
+        run: |
+          mkdir -p ./testreports
+          go test -coverprofile ./testreports/cover.out -json ./... > ./testreports/test-report.json
+      -
+        name: Generate annotations
+        uses: crazy-max/.github/.github/actions/gotest-annotations@main
+        with:
+          directory: ./testreports
+```
 
 ### `install-k3s`
 

@@ -1,10 +1,6 @@
 # https://help.github.com/en/articles/metadata-syntax-for-github-actions
 name: 'Install k3s'
 description: 'GitHub Action composite to install k3s'
-author: 'crazy-max'
-branding:
-  color: 'blue'
-  icon: 'box'
 
 inputs:
   version:
