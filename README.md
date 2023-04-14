@@ -76,10 +76,49 @@ jobs:
 
 ## Reusable workflows
 
+### `list-commits`
+
+[`list-commits` reusable workflow](.github/workflows/releases-json.yml)
+generates a JSON matrix with the list of commits for a pull request.
+
+```yaml
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  list-commits:
+    uses: crazy-max/.github/.github/workflows/list-commits.yml@main
+    with:
+      limit: 10
+    secrets: inherit
+
+  validate:
+    runs-on: ubuntu-latest
+    needs:
+      - list-commits
+    strategy:
+      fail-fast: false
+      matrix:
+        commit: ${{ fromJson(needs.list-commits.outputs.matrix) }}
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ matrix.commit }}
+```
+
+> **Note**
+>
+> `limit` input is optional and defaults to `0` (unlimited).
+
 ### `releases-json`
 
-[`releases-json` action](.github/workflows/releases-json.yml) generates a JSON
-file with the list of releases for a given repository.
+[`releases-json` reusable workflow](.github/workflows/releases-json.yml)
+generates a JSON file with the list of releases for a given repository.
 
 ```yaml
 name: ci
