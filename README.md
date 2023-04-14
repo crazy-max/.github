@@ -13,6 +13,7 @@ ___
   * [`gotest-annotations`](#gotest-annotations)
   * [`install-k3s`](#install-k3s)
 * [Reusable workflows](#reusable-workflows)
+  * [`list-commits`](#list-commits)
   * [`releases-json`](#releases-json)
 
 ## Actions
