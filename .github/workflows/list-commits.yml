@@ -1,0 +1,51 @@
+name: list-commits
+
+on:
+  workflow_call:
+    inputs:
+      limit:
+        type: number
+        default: 0
+    outputs:
+      matrix:
+        description: Matrix of commits
+        value: ${{ jobs.generate.outputs.matrix }}
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.generate.outputs.matrix }}
+    steps:
+      -
+        name: Generate matrix
+        id: generate
+        uses: actions/github-script@v6
+        with:
+          retries: 3
+          script: |
+            let matrix = [];
+            core.info(`context.eventName: ${context.eventName}`);
+            if (context.eventName != 'pull_request') {
+              core.info('Not a pull request, skipping');
+              matrix.push('');
+            } else {
+              await core.group(`Retrieving commits for PR ${context.issue.number}`, async () => {
+                const commits = await github.paginate(github.rest.pulls.listCommits.endpoint.merge({
+                  ...context.repo,
+                  pull_number: context.issue.number,
+                }));
+                for (const { sha } of commits) {
+                  core.info(sha);
+                  matrix.push(sha);
+                }
+              });
+            }
+            const limit = parseInt('${{ inputs.limit }}'.trim());
+            if (limit) {
+              matrix = matrix.slice(0, limit);
+            }
+            await core.group(`Set matrix`, async () => {
+              core.info(`matrix: ${JSON.stringify(matrix)}`);
+              core.setOutput('matrix', JSON.stringify(matrix));
+            });
