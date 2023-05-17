@@ -10,6 +10,7 @@ that can be used in your own repositories.
 ___
 
 * [Actions](#actions)
+  * [`container-logs-check`](#container-logs-check)
   * [`gotest-annotations`](#gotest-annotations)
   * [`install-k3s`](#install-k3s)
 * [Reusable workflows](#reusable-workflows)
@@ -17,6 +18,62 @@ ___
   * [`releases-json`](#releases-json)
 
 ## Actions
+
+### `container-logs-check`
+
+[`container-logs-check` composite action](.github/actions/container-logs-check/action.yml)
+checks for a string in container logs. This can be used as a _poor man's_ e2e
+testing for containers.
+
+```yaml
+name: test
+
+on:
+  push:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Run container
+        run: |
+          docker run -d --name test crazymax/samba:4.18.2
+      -
+        name: Check container logs
+        uses: crazy-max/.github/.github/actions/gotest-annotations@main
+        with:
+          container_name: test
+          log_check: " started."
+          timeout: 120
+```
+
+Action logs:
+
+```
+Checking container logs
+  Setting timezone to UTC
+  Initializing files and folders
+  Setting global configuration
+  Creating user foo/foo (1000:1000)
+  Added user foo.
+  Creating user yyy/xxx (1100:1200)
+  Added user yyy.
+  Add global option: force user = foo
+  Add global option: force group = foo
+  Creating share public
+  Creating share share
+  Creating share foo
+  # Global parameters
+  [global]
+  	disable netbios = Yes
+  	...
+  	strict locking = No
+  	vfs objects = fruit streams_xattr
+  	wide links = Yes
+  smbd version 4.18.2 started.
+  🎉 Found " started." in container logs
+```
 
 ### `gotest-annotations`
 
