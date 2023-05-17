@@ -1,0 +1,71 @@
+# https://help.github.com/en/articles/metadata-syntax-for-github-actions
+name: 'Container logs check'
+description: 'Match a string in container logs for sanity check'
+
+inputs:
+  container_name:
+    description: 'Name of the container to test'
+    required: true
+  log_check:
+    description: 'String to check in the logs'
+    required: true
+  timeout:
+    description: 'Timeout in seconds'
+    default: "120"
+
+runs:
+  using: composite
+  steps:
+    -
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const { spawn } = require('child_process');
+
+          const containerName = `${{ inputs.container_name }}`;
+          const timeout = parseInt('${{ inputs.timeout }}') * 1000;
+          const searchString = `${{ inputs.log_check }}`;
+          const childProcess = spawn('docker', ['logs', '-f', containerName]);
+
+          await core.group(`Checking container logs`, async () => {
+            let matchFound = false;
+            const timeoutId = setTimeout(() => {
+              if (!matchFound) {
+                childProcess.kill();
+                core.setFailed(`String "${searchString}" not found within ${timeout / 1000} seconds`);
+              }
+            }, timeout);
+
+            childProcess.stdout.on('data', async (data) => {
+              const lines = data.toString().split('\n');
+              for (const line of lines) {
+                if (line.trim() !== '') {
+                  await core.info(line);
+                  if (line.includes(searchString)) {
+                    matchFound = true;
+                    await core.info(`🎉 Found "${searchString}" in container logs`);
+                    clearTimeout(timeoutId);
+                    childProcess.kill();
+                    return;
+                  }
+                }
+              }
+            });
+
+            // pause the stream if the string hasn't been found yet to prevent unnecessary processing
+            if (!matchFound) {
+              childProcess.stdout.pause();
+              setTimeout(() => {
+                childProcess.stdout.resume();
+              }, 500);
+            }
+
+            // block the parent process until the child process is closed
+            await new Promise((resolve) => {
+              childProcess.on('exit', resolve);
+            });
+          });
+
+          await core.group(`Inspect container`, async () => {
+            await exec.exec('docker', ['container', 'inspect', containerName]);
+          });
