@@ -41,11 +41,11 @@ jobs:
           docker run -d --name test crazymax/samba:4.18.2
       -
         name: Check container logs
-        uses: crazy-max/.github/.github/actions/gotest-annotations@main
+        uses: crazy-max/.github/.github/actions/container-logs-check@main
         with:
           container_name: test
           log_check: " started."
-          timeout: 120
+          timeout: 20
 ```
 
 Action logs:
