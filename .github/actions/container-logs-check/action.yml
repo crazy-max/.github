@@ -36,8 +36,8 @@ runs:
               }
             }, timeout);
 
-            childProcess.stdout.on('data', async (data) => {
-              const lines = data.toString().split('\n');
+            const handleStreamData = async (streamData) => {
+              const lines = streamData.toString().split('\n');
               for (const line of lines) {
                 if (line.trim() !== '') {
                   await core.info(line);
@@ -50,7 +50,10 @@ runs:
                   }
                 }
               }
-            });
+            };
+
+            childProcess.stdout.on('data', handleStreamData);
+            childProcess.stderr.on('data', handleStreamData);
 
             // pause the stream if the string hasn't been found yet to prevent unnecessary processing
             if (!matchFound) {
