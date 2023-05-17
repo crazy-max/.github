@@ -63,6 +63,12 @@ runs:
               }, 500);
             }
 
+            // handle any errors that may occur while spawning the child process
+            childProcess.on('error', (err) => {
+              clearTimeout(timeoutId);
+              core.setFailed(err);
+            });
+
             // block the parent process until the child process is closed
             await new Promise((resolve) => {
               childProcess.on('exit', resolve);
