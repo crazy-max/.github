@@ -22,53 +22,80 @@ runs:
         script: |
           const { spawn } = require('child_process');
 
-          const containerName = `${{ inputs.container_name }}`;
-          const timeout = parseInt('${{ inputs.timeout }}') * 1000;
-          const searchString = `${{ inputs.log_check }}`;
-          const childProcess = spawn('docker', ['logs', '-f', containerName]);
+          async function checkContainerLogs() {
+            return new Promise((resolve, reject) => {
+              const containerName = `${{ inputs.container_name }}`;
+              const timeout = parseInt('${{ inputs.timeout }}') * 1000;
+              const searchString = `${{ inputs.log_check }}`;
+              const childProcess = spawn('docker', ['logs', '-f', containerName]);
 
-          await core.group(`Checking container logs`, async () => {
-            let matchFound = false;
-            const timeoutId = setTimeout(() => {
-              if (!matchFound) {
-                childProcess.kill();
-                core.setFailed(`String "${searchString}" not found within ${timeout / 1000} seconds`);
-              }
-            }, timeout);
+              let matchFound = false;
 
-            const handleStreamData = async (streamData) => {
-              const lines = streamData.toString().split('\n');
-              for (const line of lines) {
-                if (line.trim() !== '') {
-                  await core.info(line);
-                  if (line.includes(searchString)) {
-                    matchFound = true;
-                    await core.info(`🎉 Found "${searchString}" in container logs`);
-                    clearTimeout(timeoutId);
-                    childProcess.kill();
-                    return;
-                  }
+              const timeoutId = setTimeout(() => {
+                if (!matchFound) {
+                  clearInterval(intervalId);
+                  childProcess.kill();
+                  reject(`String "${searchString}" not found in container logs within ${timeout / 1000} seconds`);
+                }
+              }, timeout);
+
+              // create an async function to check the container status
+              async function checkContainerStatus() {
+                const res = await exec.getExecOutput('docker', ['container', 'inspect', '--format', '{{.State.Status}}', containerName], {
+                  ignoreReturnCode: true,
+                  silent: true
+                });
+                let err = '';
+                if (res.stderr.length > 0 && res.exitCode != 0) {
+                  err = `Error while checking container status: ${res.stderr}`;
+                }
+                if (res.stdout.trim() !== 'running') {
+                  err = `Container returned status "${res.stdout.trim()}"`;
+                }
+                if (err) {
+                  clearInterval(intervalId);
+                  clearTimeout(timeoutId);
+                  childProcess.kill();
+                  reject(err);
                 }
               }
-            };
 
-            childProcess.stdout.on('data', handleStreamData);
-            childProcess.stderr.on('data', handleStreamData);
+              const handleStreamData = async (streamData) => {
+                const lines = streamData.toString().split('\n');
+                for (const line of lines) {
+                  if (line.trim() !== '') {
+                    await core.info(line);
+                    if (line.includes(searchString)) {
+                      matchFound = true;
+                      clearInterval(intervalId);
+                      clearTimeout(timeoutId);
+                      childProcess.kill();
+                      resolve(`🎉 Found "${searchString}" in container logs`);
+                    }
+                  }
+                }
+              };
 
-            // pause the stream if the string hasn't been found yet to prevent unnecessary processing
-            if (!matchFound) {
-              childProcess.stdout.pause();
-              setTimeout(() => {
-                childProcess.stdout.resume();
-              }, 500);
-            }
+              childProcess.stdout.on('data', handleStreamData);
+              childProcess.stderr.on('data', handleStreamData);
 
-            // block the parent process until the child process is closed
-            await new Promise((resolve) => {
-              childProcess.on('exit', resolve);
+              // pause the stream if the string hasn't been found yet to prevent unnecessary processing
+              if (!matchFound) {
+                childProcess.stdout.pause();
+                setTimeout(() => {
+                  childProcess.stdout.resume();
+                }, 500);
+              }
+
+              // start checking the container status every 5 seconds
+              const intervalId = setInterval(checkContainerStatus, 5000);
             });
-          });
+          }
 
-          await core.group(`Inspect container`, async () => {
-            await exec.exec('docker', ['container', 'inspect', containerName]);
-          });
+          checkContainerLogs()
+            .then((message) => {
+              core.info(message);
+            })
+            .catch((error) => {
+              core.setFailed(error);
+            });

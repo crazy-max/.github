@@ -51,28 +51,27 @@ jobs:
 Action logs:
 
 ```
-Checking container logs
-  Setting timezone to UTC
-  Initializing files and folders
-  Setting global configuration
-  Creating user foo/foo (1000:1000)
-  Added user foo.
-  Creating user yyy/xxx (1100:1200)
-  Added user yyy.
-  Add global option: force user = foo
-  Add global option: force group = foo
-  Creating share public
-  Creating share share
-  Creating share foo
-  # Global parameters
-  [global]
-  	disable netbios = Yes
-  	...
-  	strict locking = No
-  	vfs objects = fruit streams_xattr
-  	wide links = Yes
-  smbd version 4.18.2 started.
-  🎉 Found " started." in container logs
+Setting timezone to UTC
+Initializing files and folders
+Setting global configuration
+Creating user foo/foo (1000:1000)
+Added user foo.
+Creating user yyy/xxx (1100:1200)
+Added user yyy.
+Add global option: force user = foo
+Add global option: force group = foo
+Creating share public
+Creating share share
+Creating share foo
+# Global parameters
+[global]
+  disable netbios = Yes
+  ...
+  strict locking = No
+  vfs objects = fruit streams_xattr
+  wide links = Yes
+smbd version 4.18.2 started.
+🎉 Found " started." in container logs
 ```
 
 ### `gotest-annotations`

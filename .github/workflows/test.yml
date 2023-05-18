@@ -86,3 +86,57 @@ jobs:
           container_name: test
           log_check: " started."
           timeout: 20
+
+  container-logs-check-notfound:
+    runs-on: ubuntu-20.04
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Run container
+        run: |
+          docker run -d --name test crazymax/samba:latest
+      -
+        name: Check container logs
+        id: check
+        continue-on-error: true
+        uses: ./.github/actions/container-logs-check
+        with:
+          container_name: test
+          log_check: " foo."
+          timeout: 10
+      -
+        name: Check
+        run: |
+          if [ "${{ steps.check.outcome }}" != "failure" ] || [ "${{ steps.check.conclusion }}" != "success" ]; then
+            echo "::error::Should have failed"
+            exit 1
+          fi
+
+  container-logs-check-failed:
+    runs-on: ubuntu-20.04
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Run container
+        run: |
+          docker run -d --name test --entrypoint '' crazymax/samba:latest sh -c "echo 'foo' && exit 1"
+      -
+        name: Check container logs
+        id: check
+        continue-on-error: true
+        uses: ./.github/actions/container-logs-check
+        with:
+          container_name: test
+          log_check: " foo."
+          timeout: 10
+      -
+        name: Check
+        run: |
+          if [ "${{ steps.check.outcome }}" != "failure" ] || [ "${{ steps.check.conclusion }}" != "success" ]; then
+            echo "::error::Should have failed"
+            exit 1
+          fi
