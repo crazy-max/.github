@@ -22,7 +22,7 @@ runs:
       with:
         script: |
           const lineReader = require('line-by-line');
-          const testRegex = /(\s*[\w\d]+_test.go:\d+:)(.*?)(---\sFAIL:.*)/gs;
+          const testRegex = /(\s*[\w\d]+.go:\d+:)(.*?)(---\sFAIL:.*)/gs;
           let tests = {};
           const globber = await glob.create(`${{ inputs.directory }}/**/*.json`);
           for await (const jsonReport of globber.globGenerator()) {
@@ -48,7 +48,7 @@ runs:
             });
             lr.on('end', function() {
               for (const [key, test] of Object.entries(tests)) {
-                if (!test.output.includes("FAIL") || !test.output.includes("_test.go")) {
+                if (!test.output.includes("FAIL") || !test.output.includes(".go")) {
                   continue;
                 }
                 var result;
