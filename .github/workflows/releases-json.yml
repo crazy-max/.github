@@ -14,10 +14,6 @@ on:
         required: false
         type: string
         default: 'releases.json'
-    outputs:
-      releases:
-        description: GitHub Releases JSON
-        value: ${{ jobs.generate.outputs.releases }}
 
 jobs:
   generate:
@@ -62,7 +58,6 @@ jobs:
               };
             }
 
-            core.setOutput('releases', JSON.stringify(res));
             await fs.writeFileSync('${{ inputs.filename }}', JSON.stringify(res, null, 2));
       -
         name: Check file
