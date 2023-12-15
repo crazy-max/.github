@@ -199,7 +199,7 @@ jobs:
     steps:
       -
         name: Download
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: buildx-releases-json
           path: .
