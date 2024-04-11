@@ -46,6 +46,8 @@ runs:
               await wait(10000);
 
               core.exportVariable('KUBECONFIG', kubeconfig);
+              await exec.exec(`kubectl -n kube-system rollout status deploy/coredns --timeout=120s`);
+              await exec.exec(`kubectl get all --all-namespaces`);
 
               let nodeName;
               for (let count = 1; count <= ${{ env.RETRIES }}; count++) {
