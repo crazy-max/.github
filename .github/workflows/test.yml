@@ -169,4 +169,6 @@ jobs:
           format: ${{ matrix.format }}
       -
         name: Print result
-        run: cat ${{ steps.scout.outputs.result }}
+        run: |
+          set -x
+          cat ${{ steps.scout.outputs.result-file }}
