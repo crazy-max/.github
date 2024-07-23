@@ -74,14 +74,6 @@ runs:
 
           // TODO: cache binary
 
-          const res = await exec.getExecOutput('docker', ['scout', 'cves', `${{ inputs.image }}`, '--format', `${{ inputs.format }}`], {
-            ignoreReturnCode: true
-          });
-          if (res.stderr.length > 0 && res.exitCode != 0) {
-            throw new Error(`scout failed with: ${res.stderr.match(/(.*)\s*$/)?.[0]?.trim() ?? 'unknown error'}`);
-          }
-
           const resultPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'docker-scout-action-')), 'result.txt');
-          core.info(`Writing result file to ${resultPath}`);
-          fs.writeFileSync(resultPath, res.stdout.trim());
           core.setOutput('result-file', resultPath);
+          await exec.exec('docker', ['scout', 'cves', `${{ inputs.image }}`, '--format', `${{ inputs.format }}`, `--output`, resultPath]);
