@@ -17,7 +17,7 @@ inputs:
 
 outputs:
   result:
-    description: "File output result"
+    description: 'File output result'
     value: ${{ steps.run.outputs.result }}
 
 runs:
@@ -78,9 +78,8 @@ runs:
             ignoreReturnCode: true
           });
           if (res.stderr.length > 0 && res.exitCode != 0) {
-            throw new Error(res.stderr);
+            throw new Error(`scout failed with: ${res.stderr.match(/(.*)\s*$/)?.[0]?.trim() ?? 'unknown error'}`);
           }
-          await exec.exec(`docker scout cves ${{ inputs.image }} --format sarif`);
 
           const resultPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'docker-scout-action-')), 'result.txt');
           core.info(`Writing result to ${resultPath}`);
