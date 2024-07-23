@@ -144,6 +144,8 @@ jobs:
   docker-scout:
     runs-on: ubuntu-20.04
     if: ${{ github.event_name != 'pull_request' }}
+    permissions:
+      security-events: write
     strategy:
       fail-fast: false
       matrix:
