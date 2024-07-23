@@ -1,0 +1,88 @@
+# https://help.github.com/en/articles/metadata-syntax-for-github-actions
+name: 'Docker scout'
+description: 'Check vulnerabilities'
+
+inputs:
+  version:
+    description: 'Docker scout version'
+    default: 'latest'
+    required: true
+  format:
+    description: 'Output format'
+    default: 'packages'
+    required: true
+  image:
+    description: 'Name of the image'
+    required: true
+
+outputs:
+  result:
+    description: "File output result"
+    value: ${{ steps.run.outputs.result }}
+
+runs:
+  using: composite
+  steps:
+    -
+      uses: actions/github-script@v7
+      id: run
+      with:
+        script: |
+          const fs = require('fs');
+          const os = require('os');
+          const path = require('path');
+
+          await core.group(`Pull docker/scout-cli image`, async () => {
+            await exec.exec(`docker pull docker.io/docker/scout-cli:${{ inputs.version }}`);
+          });
+
+          await core.group(`Copy binary`, async () => {
+            const res = await exec.getExecOutput('docker', ['create', 'docker.io/docker/scout-cli:${{ inputs.version }}'], {
+              ignoreReturnCode: true
+            });
+            if (res.stderr.length > 0 && res.exitCode != 0) {
+              throw new Error(res.stderr);
+            }
+            const ctnid = res.stdout.trim();
+            const dockerCfgPath = process.env.DOCKER_CONFIG || path.join(os.homedir(), '.docker');
+            const pluginsPath = path.join(dockerCfgPath, 'cli-plugins');
+            fs.mkdirSync(pluginsPath, {recursive: true});
+            await exec.exec(`docker cp ${ctnid}:/docker-scout ${pluginsPath}`);
+            await exec.exec(`docker rm -v ${ctnid}`);
+          });
+
+          await core.group(`Docker info`, async () => {
+            await exec.exec(`docker info`);
+          });
+
+          let version;
+          await core.group(`Docker scout version`, async () => {
+            const res = await exec.getExecOutput('docker', ['scout', 'version'], {
+              ignoreReturnCode: true,
+              silent: true
+            });
+            if (res.stderr.length > 0 && res.exitCode != 0) {
+              throw new Error(res.stderr);
+            }
+            const matchVersion = res.stdout.trim().match(/version:\s(.*?)\s/);
+            version = matchVersion ? matchVersion[1] : null;
+            if (!version) {
+              throw new Error('Failed to get Docker scout version');
+            }
+            core.info(version);
+          });
+
+          // TODO: cache binary
+
+          const res = await exec.getExecOutput('docker', ['scout', 'cves', `${{ inputs.image }}`, '--format', `${{ inputs.format }}`], {
+            ignoreReturnCode: true
+          });
+          if (res.stderr.length > 0 && res.exitCode != 0) {
+            throw new Error(res.stderr);
+          }
+          await exec.exec(`docker scout cves ${{ inputs.image }} --format sarif`);
+
+          const resultPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'docker-scout-action-')), 'result.txt');
+          core.info(`Writing result to ${resultPath}`);
+          fs.writeFileSync(resultPath, res.stdout.trim());
+          core.setOutput('result', resultPath);
