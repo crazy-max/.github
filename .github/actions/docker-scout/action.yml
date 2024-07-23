@@ -16,9 +16,9 @@ inputs:
     required: true
 
 outputs:
-  result:
+  result-file:
     description: 'File output result'
-    value: ${{ steps.run.outputs.result }}
+    value: ${{ steps.run.outputs.result-file }}
 
 runs:
   using: composite
@@ -82,6 +82,6 @@ runs:
           }
 
           const resultPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'docker-scout-action-')), 'result.txt');
-          core.info(`Writing result to ${resultPath}`);
+          core.info(`Writing result file to ${resultPath}`);
           fs.writeFileSync(resultPath, res.stdout.trim());
-          core.setOutput('result', resultPath);
+          core.setOutput('result-file', resultPath);
