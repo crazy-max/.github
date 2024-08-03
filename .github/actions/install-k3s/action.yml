@@ -16,6 +16,7 @@ runs:
       with:
         script: |
             const fs = require('fs');
+            const os = require('os');
 
             let wait = function(milliseconds) {
               return new Promise((resolve, reject) => {
@@ -44,6 +45,15 @@ runs:
                 "server"
               ]);
               await wait(10000);
+
+              fs.readFile(kubeconfig, 'utf8', function (err,data) {
+                if (err) {
+                  throw new Error(err);
+                }
+                fs.writeFile(kubeconfig, data.replace(/127.0.0.1/g, os.hostname()), 'utf8', function (err) {
+                   if (err) throw new Error(err);
+                });
+              });
 
               core.exportVariable('KUBECONFIG', kubeconfig);
 
