@@ -22,6 +22,14 @@ jobs:
       releases: ${{ steps.generate.outputs.releases }}
     steps:
       -
+        name: Install npm deps
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await core.group(`Install npm deps`, async () => {
+              await exec.exec('npm', ['install', 'semver']);
+            });
+      -
         name: Generate
         id: generate
         uses: actions/github-script@v7
@@ -29,6 +37,7 @@ jobs:
           retries: 3
           script: |
             const fs = require('fs');
+            const semver = require('semver');
 
             let res = {};
             const [owner, repo] = '${{ inputs.repository }}'.split('/');
@@ -50,6 +59,21 @@ jobs:
               repo,
             }));
             for (const release of releases) {
+              if (release.draft) {
+                continue;
+              }
+              if (!res['edge'] && release.prerelease) {
+                if (semver.gt(release.tag_name, res['latest'].tag_name)) {
+                  res['edge'] = {
+                    id: release.id,
+                    tag_name: release.tag_name,
+                    html_url: release.html_url,
+                    assets: release.assets.map(asset => asset.browser_download_url).sort(),
+                  };
+                } else {
+                  res['edge'] = res['latest'];
+                }
+              }
               res[release.tag_name] = {
                 id: release.id,
                 tag_name: release.tag_name,
