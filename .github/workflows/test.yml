@@ -60,6 +60,31 @@ jobs:
         run: |
           jq . test-edge-releases.json
 
+  releases-json-pin:
+    uses: ./.github/workflows/releases-json.yml
+    with:
+      repository: docker/buildx
+      artifact_name: buildx-releases-pin-json
+      filename: buildx-releases-pin.json
+      pin_latest: v0.18.0
+    secrets: inherit
+
+  releases-json-pin-check:
+    runs-on: ubuntu-latest
+    needs:
+      - releases-json-pin
+    steps:
+      -
+        name: Download
+        uses: actions/download-artifact@v4
+        with:
+          name: buildx-releases-pin-json
+          path: .
+      -
+        name: Check file
+        run: |
+          jq . buildx-releases-pin.json
+
   install-k3s:
     runs-on: ubuntu-20.04
     steps:

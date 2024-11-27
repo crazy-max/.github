@@ -175,7 +175,9 @@ jobs:
 ### `releases-json`
 
 [`releases-json` reusable workflow](.github/workflows/releases-json.yml)
-generates a JSON file with the list of releases for a given repository.
+generates a JSON file with the list of releases for a given repository. Releases
+tags should be [semver](https://semver.org/) compliant and should not contain
+`latest` or `edge` tags that are handled internally by this action.
 
 ```yaml
 name: ci

@@ -14,6 +14,9 @@ on:
         required: false
         type: string
         default: 'releases.json'
+      pin_latest:
+        required: false
+        type: string
 
 jobs:
   generate:
@@ -40,7 +43,7 @@ jobs:
             const semver = require('semver');
 
             let res = {};
-            const [owner, repo] = '${{ inputs.repository }}'.split('/');
+            const [owner, repo] = `${{ inputs.repository }}`.split('/');
             core.info(`Fetching releases for ${owner}/${repo}`);
 
             const latestRelease = await github.rest.repos.getLatestRelease({
@@ -53,6 +56,8 @@ jobs:
               html_url: latestRelease.data.html_url,
               assets: latestRelease.data.assets.map(asset => asset.browser_download_url).sort(),
             };
+
+            const pinLatest = `${{ inputs.pin_latest }}`;
 
             const releases = await github.paginate(github.rest.repos.listReleases.endpoint.merge({
               owner,
@@ -73,6 +78,14 @@ jobs:
                 } else {
                   res['edge'] = res['latest'];
                 }
+              }
+              if (pinLatest && release.tag_name === pinLatest) {
+                res['latest'] = {
+                  id: release.id,
+                  tag_name: release.tag_name,
+                  html_url: release.html_url,
+                  assets: release.assets.map(asset => asset.browser_download_url).sort(),
+                };
               }
               res[release.tag_name] = {
                 id: release.id,
