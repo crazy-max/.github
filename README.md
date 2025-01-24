@@ -117,9 +117,7 @@ on:
 
 jobs:
   install-k3s:
-    # does not work with ubuntu-22.04 atm:
-    # E0310 17:16:57.210215    2047 memcache.go:238] couldn't get current server API group list: Get "https://127.0.0.1:6443/api?timeout=32s": dial tcp 127.0.0.1:6443: connect: connection refused
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       -
         name: Checkout
@@ -128,7 +126,7 @@ jobs:
         name: Install k3s
         uses: crazy-max/.github/.github/actions/install-k3s@main
         with:
-          version: v1.21.2-k3s1
+          version: v1.24.4+k3s1
 ```
 
 ## Reusable workflows
