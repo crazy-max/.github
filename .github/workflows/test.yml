@@ -86,7 +86,14 @@ jobs:
           jq . buildx-releases-pin.json
 
   install-k3s:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-20.04
+          - ubuntu-22.04
+          - ubuntu-24.04
     steps:
       -
         name: Checkout
