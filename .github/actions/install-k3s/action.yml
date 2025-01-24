@@ -17,7 +17,7 @@ runs:
         mkdir -p "${KUBECONFIG}"
         echo "KUBECONFIG=${KUBECONFIG}" >> $GITHUB_ENV
         set -x
-        curl -sfL https://get.k3s.io | sh -s - server --docker --disable-network-policy --disable traefik --disable metrics-server --flannel-backend=none --write-kubeconfig-mode 666 --write-kubeconfig ${KUBECONFIG}
+        curl -sfL https://get.k3s.io | sh -s - server --docker --disable-network-policy --disable traefik --disable metrics-server --flannel-backend=none --write-kubeconfig-mode 666 --write-kubeconfig ${KUBECONFIG} || journalctl -xeu k3s.service --no-pager
         sudo k3s kubectl get node
       env:
         INSTALL_K3S_VERSION: ${{ inputs.version }}
