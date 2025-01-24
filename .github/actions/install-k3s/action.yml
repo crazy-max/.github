@@ -5,7 +5,8 @@ description: 'GitHub Action composite to install k3s'
 inputs:
   version:
     description: 'k3s version. (e.g, v1.24.4+k3s1)'
-    required: false
+    required: true
+    default: 'v1.24.4+k3s1'
 
 runs:
   using: "composite"
