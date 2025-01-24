@@ -94,6 +94,9 @@ jobs:
           - ubuntu-20.04
           - ubuntu-22.04
           - ubuntu-24.04
+        version:
+          - ''
+          - v1.24.4+k3s2
     steps:
       -
         name: Checkout
@@ -102,7 +105,7 @@ jobs:
         name: Install k3s
         uses: ./.github/actions/install-k3s
         with:
-          version: v1.24.4+k3s1
+          version: ${{ matrix.version }}
 
   list-commits:
     uses: ./.github/workflows/list-commits.yml
