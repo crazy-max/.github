@@ -101,8 +101,6 @@ jobs:
       -
         name: Install k3s
         uses: ./.github/actions/install-k3s
-        with:
-          version: v1.24.4+k3s1
 
   list-commits:
     uses: ./.github/workflows/list-commits.yml

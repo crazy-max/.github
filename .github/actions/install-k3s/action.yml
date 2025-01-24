@@ -4,9 +4,9 @@ description: 'GitHub Action composite to install k3s'
 
 inputs:
   version:
-    description: 'k3s version. (e.g, v1.24.4+k3s1)'
+    description: 'k3s version. (e.g, v1.29.0+k3s1)'
     required: true
-    default: 'v1.24.4+k3s1'
+    default: 'v1.29.0+k3s1'
 
 runs:
   using: "composite"
@@ -17,7 +17,7 @@ runs:
         mkdir -p "${KUBECONFIG}"
         echo "KUBECONFIG=${KUBECONFIG}" >> $GITHUB_ENV
         set -x
-        curl -sfL https://get.k3s.io | sh -s - --docker --disable traefik --disable servicelb --write-kubeconfig-mode 666 --write-kubeconfig ${KUBECONFIG}
+        curl -sfL https://get.k3s.io | sh -s - server --docker --disable-network-policy --disable traefik --disable metrics-server --flannel-backend=none --write-kubeconfig-mode 666 --write-kubeconfig ${KUBECONFIG}
         sudo k3s kubectl get node
       env:
         INSTALL_K3S_VERSION: ${{ inputs.version }}
