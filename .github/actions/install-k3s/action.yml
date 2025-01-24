@@ -12,65 +12,13 @@ runs:
   using: "composite"
   steps:
     -
-      uses: actions/github-script@v7
-      with:
-        script: |
-            const fs = require('fs');
-
-            let wait = function(milliseconds) {
-              return new Promise((resolve, reject) => {
-                if (typeof(milliseconds) !== 'number') {
-                  throw new Error('milleseconds not a number');
-                }
-                setTimeout(() => resolve("done!"), milliseconds)
-              });
-            }
-
-            try {
-              const kubeconfig="${{ env.TEMPDIR }}/kubeconfig.yaml";
-              core.info(`storing kubeconfig in ${kubeconfig}`);
-
-              await exec.exec('docker', ["run", "-d",
-                "--privileged",
-                "--name=install-k3s-action",
-                "-e", "K3S_KUBECONFIG_OUTPUT="+kubeconfig,
-                "-e", "K3S_KUBECONFIG_MODE=666",
-                "-v", "${{ env.TEMPDIR }}:${{ env.TEMPDIR }}",
-                "-p", "6443:6443",
-                "-p", "80:80",
-                "-p", "443:443",
-                "-p", "8080:8080",
-                "rancher/k3s:${{ inputs.version }}",
-                "server"
-              ]);
-              await wait(10000);
-
-              core.exportVariable('KUBECONFIG', kubeconfig);
-
-              let nodeName;
-              for (let count = 1; count <= ${{ env.RETRIES }}; count++) {
-                try {
-                  const nodeNameOutput = await exec.getExecOutput("kubectl get nodes --no-headers -oname");
-                  nodeName = nodeNameOutput.stdout
-                } catch (error) {
-                  core.info(`Unable to resolve node name (${error.message}). Attempt ${count} of ${{ env.RETRIES }}.`)
-                } finally {
-                  if (nodeName) {
-                    break;
-                  }
-                  await wait(5000);
-                }
-              }
-              if (!nodeName) {
-                await exec.exec(`yq ${kubeconfig}`);
-                throw new Error(`Unable to resolve node name after ${{ env.RETRIES }} attempts.`);
-              }
-
-              await exec.exec(`kubectl wait --for=condition=Ready ${nodeName}`);
-              await exec.exec(`yq ${kubeconfig}`);
-            } catch (error) {
-              core.setFailed(error.message);
-            }
+      run: |
+        export KUBECONFIG=${RUNNER_TEMP}/.kube/config
+        mkdir -p "${KUBECONFIG}"
+        echo "KUBECONFIG=${KUBECONFIG}" >> $GITHUB_ENV
+        set -x
+        curl -sfL https://get.k3s.io | sh -s - --disable traefik --disable servicelb --write-kubeconfig-mode 666 --write-kubeconfig ${KUBECONFIG}
+        sudo k3s kubectl get node
       env:
-        TEMPDIR: /tmp/install-k3s-action
-        RETRIES: '10'
+        INSTALL_K3S_VERSION: ${{ inputs.version }}
+      shell: bash
