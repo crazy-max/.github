@@ -13,12 +13,15 @@ runs:
   steps:
     -
       run: |
-        export KUBECONFIG=${RUNNER_TEMP}/.kube/config
-        mkdir -p "${KUBECONFIG}"
-        echo "KUBECONFIG=${KUBECONFIG}" >> $GITHUB_ENV
         set -x
-        curl -sfL https://get.k3s.io | sh -s - server --docker --disable-network-policy --disable traefik --disable metrics-server --flannel-backend=none --write-kubeconfig-mode 666 --write-kubeconfig ${KUBECONFIG} || journalctl -xeu k3s.service --no-pager
+        curl -sfL https://get.k3s.io | sh -s - server --docker --disable-network-policy --disable traefik --disable metrics-server --flannel-backend=none --write-kubeconfig-mode 666 || journalctl -xeu k3s.service --no-pager
         sudo k3s kubectl get node
+
+        kubeConfig=${RUNNER_TEMP}/.kube/config
+        mkdir -p "${RUNNER_TEMP}/.kube"
+        echo "KUBECONFIG=${kubeConfig}" >> $GITHUB_ENV
+        sudo cat /etc/rancher/k3s/k3s.yaml > "${kubeConfig}"
+        chmod 600 "${kubeConfig}"
       env:
         INSTALL_K3S_VERSION: ${{ inputs.version }}
       shell: bash
