@@ -86,7 +86,13 @@ jobs:
           jq . buildx-releases-pin.json
 
   install-k3s:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-22.04
+          - ubuntu-24.04
     steps:
       -
         name: Checkout
@@ -94,8 +100,13 @@ jobs:
       -
         name: Install k3s
         uses: ./.github/actions/install-k3s
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
         with:
-          version: v1.21.2-k3s1
+          driver: kubernetes
+          driver-opts: qemu.install=true
+          buildkitd-flags: --debug
 
   list-commits:
     uses: ./.github/workflows/list-commits.yml
