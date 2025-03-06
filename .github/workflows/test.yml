@@ -203,6 +203,9 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event_name != 'pull_request' }}
     permissions:
+      # required to check out the repository
+      contents: read
+      # required to write sarif report
       security-events: write
     strategy:
       fail-fast: false
@@ -255,6 +258,7 @@ jobs:
       summary: false
       meta-image: ghcr.io/crazy-max/test-bake-distribute-mp
       meta-bake-target: meta-helper
+      login-registry: ghcr.io
       login-username: ${{ github.actor }}
     secrets:
       login-password: ${{ secrets.GITHUB_TOKEN }}
