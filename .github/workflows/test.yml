@@ -4,6 +4,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#permissions
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
   push:
@@ -234,3 +238,23 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: ${{ steps.scout.outputs.result-file }}
+
+  bake-distribute-mp:
+    uses: ./.github/workflows/bake-distribute-mp.yml
+    permissions:
+      # same as global permissions
+      contents: read
+      # required to push to GHCR
+      packages: write
+    with:
+      bake-source: https://github.com/docker/buildx.git#v0.21.2
+      target: image-cross
+      push: ${{ github.event_name != 'pull_request' }}
+      cache: true
+      cache-scope: buildx-bin
+      summary: false
+      meta-image: ghcr.io/crazy-max/test-bake-distribute-mp
+      meta-bake-target: meta-helper
+      login-username: ${{ github.actor }}
+    secrets:
+      login-password: ${{ secrets.GITHUB_TOKEN }}
