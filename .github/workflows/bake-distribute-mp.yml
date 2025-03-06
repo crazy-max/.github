@@ -636,7 +636,7 @@ jobs:
                 }
               });
               await core.group(`Inspect image`, async () => {
-                await exec.getExecOutput('docker', ['buildx', 'imagetools', 'inspect', `${inpMetaImage}:${tags[0]}`], {
+                await exec.getExecOutput('docker', ['buildx', 'imagetools', 'inspect', tags[0]], {
                   ignoreReturnCode: true
                 }).then(res => {
                   if (res.stderr.length > 0 && res.exitCode != 0) {
