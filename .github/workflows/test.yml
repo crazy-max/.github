@@ -86,13 +86,7 @@ jobs:
           jq . buildx-releases-pin.json
 
   install-k3s:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu-22.04
-          - ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       -
         name: Checkout
@@ -130,7 +124,7 @@ jobs:
           ref: ${{ matrix.commit }}
 
   container-logs-check:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       -
         name: Checkout
@@ -148,7 +142,7 @@ jobs:
           timeout: 20
 
   container-logs-check-notfound:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       -
         name: Checkout
@@ -175,7 +169,7 @@ jobs:
           fi
 
   container-logs-check-failed:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       -
         name: Checkout
@@ -202,7 +196,7 @@ jobs:
           fi
 
   docker-scout:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: ${{ github.event_name != 'pull_request' }}
     permissions:
       security-events: write
