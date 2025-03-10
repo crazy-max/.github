@@ -129,6 +129,55 @@ jobs:
 
 ## Reusable workflows
 
+### `build-distribute-mp`
+
+[`build-distribute-mp` reusable workflow](.github/workflows/build-distribute-mp.yml)
+distributes multi-platform builds across runners efficiently.
+
+```yaml
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    uses: crazy-max/.github/.github/workflows/build-distribute-mp.yml@main
+    with:
+      push: ${{ github.event_name != 'pull_request' }}
+      cache: true
+      meta-image: user/app
+      build-platforms: linux/amd64,linux/arm64
+      login-username: ${{ vars.DOCKERHUB_USERNAME }}
+    secrets:
+      login-password: ${{ secrets.DOCKERHUB_TOKEN }}
+```
+
+Here are the main inputs for this reusable workflow:
+
+| Name              | Type     | Default | Description                                                                                                                                                                                                                                                |
+|-------------------|----------|---------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `runner`          | String   | `auto`¹ | Runner instance (e.g., `ubuntu-latest`).                                                                                                                                                                                                                   |
+| `push`            | Bool     | `false` | Push image to registry.                                                                                                                                                                                                                                    |
+| `cache`           | Bool     | `false` | Enable GitHub Actions cache backend.                                                                                                                                                                                                                       |
+| `cache-scope`     | String   |         | Which scope GitHub Actions cache object belongs to if `cache` enabled.                                                                                                                                                                                     |
+| `cache-mode`      | String   | `min`   | Cache layers to export if `cache` enabled (one of `min` or `max`).                                                                                                                                                                                         |
+| `summary`         | Bool     | `true`  | Enable [build summary](https://docs.docker.com/build/ci/github-actions/build-summary/) generation.                                                                                                                                                         |
+| `meta-image`      | String   |         | Image to use as base name for tags. This input is similar to [`images` input in `docker/metadata-action`](https://github.com/docker/metadata-action?tab=readme-ov-file#images-input) used in this reusable workflow but accepts a single image name.       |
+| `build-platforms` | List/CSV |         | List of target platforms for build. This input is similar to [`platforms` input in `docker/build-push-action`](https://github.com/docker/build-push-action?tab=readme-ov-file#inputs) used in this reusable workflow. At least two platforms are required. |
+| `login-registry`  | String   |         | Server address of Docker registry. If not set then will default to Docker Hub. This input is similar to [`registry` input in `docker/login-action`](https://github.com/docker/login-action?tab=readme-ov-file#inputs) used in this reusable workflow.      |
+| `login-username`² | String   |         | Username used to log against the Docker registry. This input is similar to [`username` input in `docker/login-action`](https://github.com/docker/login-action?tab=readme-ov-file#inputs) used in this reusable workflow.                                   |
+| `login-password`  | String   |         | Specifies whether the given registry is ECR (auto, true or false). This input is similar to [`password` input in `docker/login-action`](https://github.com/docker/login-action?tab=readme-ov-file#inputs) used in this reusable workflow.                  |
+
+> [!NOTE]
+> ¹ `auto` will choose the best matching runner depending on the target
+> platform being built (either `ubuntu-latest` or `ubuntu-24.04-arm`).
+> 
+> ² `login-username` can be used as either an input or secret.
+
+You can find the list of available inputs directly in [the reusable workflow](.github/workflows/build-distribute-mp.yml).
+
 ### `bake-distribute-mp`
 
 [`bake-distribute-mp` reusable workflow](.github/workflows/bake-distribute-mp.yml)
