@@ -13,8 +13,6 @@ runs:
   steps:
     -
       uses: actions/github-script@v7
-      env:
-        RETRIES: '10'
       with:
         script: |
           const fs = require('fs');
