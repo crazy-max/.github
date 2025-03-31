@@ -11,6 +11,7 @@ ___
 
 * [Actions](#actions)
   * [`container-logs-check`](#container-logs-check)
+  * [`docker-scout`](#docker-scout)
   * [`gotest-annotations`](#gotest-annotations)
   * [`install-k3s`](#install-k3s)
 * [Reusable workflows](#reusable-workflows)
@@ -75,6 +76,39 @@ Creating share foo
   wide links = Yes
 smbd version 4.18.2 started.
 🎉 Found " started." in container logs
+```
+
+### `docker-scout`
+
+[`docker-scout` composite action](.github/actions/docker-scout/action.yml) scans
+Docker images for vulnerabilities using [Docker Scout](https://docs.docker.com/scout/).
+
+```yaml
+name: ci
+
+on:
+  push:
+
+jobs:
+  scout:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      -
+        name: Scout
+        id: scout
+        uses: crazy-max/.github/.github/actions/docker-scout@main
+        with:
+          version: "1.11.0"
+          format: sarif
+          image: alpine:latest
+      -
+        name: Upload SARIF report
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ steps.scout.outputs.result-file }}
 ```
 
 ### `gotest-annotations`
