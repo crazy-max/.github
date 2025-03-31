@@ -81,7 +81,7 @@ smbd version 4.18.2 started.
 ### `docker-scout`
 
 [`docker-scout` composite action](.github/actions/docker-scout/action.yml) scans
-Docker images for vulnerabilities using [Docker Scout](https://docs.docker.com/scout/).
+Docker images for vulnerabilities using [Docker Scout](https://github.com/docker/scout-cli).
 
 ```yaml
 name: ci
@@ -101,7 +101,6 @@ jobs:
         id: scout
         uses: crazy-max/.github/.github/actions/docker-scout@main
         with:
-          version: "1.11.0"
           format: sarif
           image: alpine:latest
       -
@@ -110,6 +109,8 @@ jobs:
         with:
           sarif_file: ${{ steps.scout.outputs.result-file }}
 ```
+
+You can find the list of available inputs directly in [the action configuration](.github/actions/docker-scout/action.yml).
 
 ### `gotest-annotations`
 
