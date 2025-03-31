@@ -17,6 +17,7 @@ ___
   * [`build-distribute-mp`](#build-distribute-mp)
   * [`bake-distribute-mp`](#bake-distribute-mp)
   * [`list-commits`](#list-commits)
+  * [`pr-assign-author`](#pr-assign-author)
   * [`releases-json`](#releases-json)
 
 ## Actions
@@ -300,6 +301,29 @@ jobs:
 
 > [!NOTE]
 > `limit` input is optional and defaults to `0` (unlimited).
+
+### `pr-assign-author`
+
+[`pr-assign-author` reusable workflow](.github/workflows/pr-assign-author.yml)
+assigns the author of a pull request as an assignee.
+
+```yaml
+name: assign-author
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  run:
+    uses: crazy-max/.github/.github/workflows/pr-assign-author.yml@main
+```
 
 ### `releases-json`
 
