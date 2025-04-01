@@ -284,3 +284,11 @@ jobs:
       login-username: ${{ github.actor }}
     secrets:
       login-password: ${{ secrets.GITHUB_TOKEN }}
+
+  zizmor:
+    uses: ./.github/workflows/zizmor.yml
+    permissions:
+      contents: read
+      security-events: write
+    with:
+      args: --no-online-audits

@@ -1,0 +1,104 @@
+name: zizmor
+
+on:
+  workflow_call:
+    inputs:
+      args:
+        required: false
+        type: string
+
+jobs:
+  zizmor:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      -
+        name: Prepare
+        uses: actions/github-script@v7
+        env:
+          INPUT_ARGS: ${{ inputs.args }}
+        with:
+          script: |
+            const fs = require('fs');
+            const os = require('os');
+            const path = require('path');
+
+            await core.group(`Checking for existing workflows`, async () => {
+              const workflows = fs.readdirSync('.github/workflows').filter(file => file.endsWith('.yml') || file.endsWith('.yaml'));
+              if (workflows.length > 0) {
+                core.info(`${workflows.length} workflows found.`);
+                core.exportVariable('HAS_WORKFLOWS', 'true');
+              } else {
+                core.info("No workflows found, skipping zizmor scan.");
+              }
+            });
+
+            // https://docs.github.com/en/rest/code-scanning/code-scanning?apiVersion=2022-11-28#list-code-scanning-alerts-for-a-repository
+            let advancedSecurityEnabled = false;
+            await core.group(`Check if Advanced Security is enabled on this repository`, async () => {
+              await github.request('GET /repos/{owner}/{repo}/code-scanning/alerts', {
+                ...context.repo,
+              }).then(res => {
+                core.info('Advanced Security enabled.');
+                advancedSecurityEnabled = true;
+                core.exportVariable('ADVANCED_SECURITY_ENABLED', 'true');
+              }).catch(error => {
+                if (error.status === 403) {
+                  core.warning('Advanced Security is not enabled on this repository. SARIF report will not be uploaded.');
+                } else {
+                  core.warning(`Error checking Advanced Security status (${error.status}: ${error.message})`);
+                }
+              });
+            });
+
+            await core.group(`Setting zizmor args`, async () => {
+              const resultFile = path.join(fs.mkdtempSync(path.join(`${{ runner.temp }}` || os.tmpdir(), 'zizmor-')), 'results.sarif');
+              const zizmorArgs = [];
+              if (advancedSecurityEnabled) {
+                zizmorArgs.push('--format', 'sarif');
+              } else {
+                zizmorArgs.push('--format', 'plain');
+              }
+              zizmorArgs.push(...core.getInput('args').split(' '), '.');
+              core.info(zizmorArgs.join(' '));
+              core.exportVariable('ZIZMOR_ARGS', zizmorArgs.join(' '));
+              if (advancedSecurityEnabled) {
+                core.exportVariable('ZIZMOR_RESULT', resultFile);
+              } else {
+                core.exportVariable('ZIZMOR_RESULT', '&1');
+              }
+            });
+      -
+        name: Setup uv
+        if: ${{ env.HAS_WORKFLOWS }}
+        uses: astral-sh/setup-uv@0c5e2b8115b80b4c7c5ddf6ffdd634974642d182 # v5.4.1
+        with:
+          enable-cache: false
+      -
+        name: Install zizmor
+        if: ${{ env.HAS_WORKFLOWS }}
+        run: |
+          set -ex
+          uv tool install zizmor
+      -
+        name: Run zizmor
+        if: ${{ env.HAS_WORKFLOWS }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -ex
+          zizmor ${ZIZMOR_ARGS} > ${ZIZMOR_RESULT}
+      -
+        name: Upload SARIF report
+        if: ${{ env.HAS_WORKFLOWS && env.ADVANCED_SECURITY_ENABLED && env.ZIZMOR_RESULT }}
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ env.ZIZMOR_RESULT }}
+          category: zizmor
