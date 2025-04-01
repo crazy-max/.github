@@ -20,18 +20,37 @@ jobs:
         with:
           persist-credentials: false
       -
-        name: Check for workflows
+        name: Prepare
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const workflows = fs.readdirSync('.github/workflows').filter(file => file.endsWith('.yml') || file.endsWith('.yaml'));
-            if (workflows.length > 0) {
-              core.info(`${workflows.length} workflows found.`);
-              core.exportVariable('HAS_WORKFLOWS', 'true');
-            } else {
-              core.info("No workflows found, skipping zizmor scan.");
-            }
+
+            await core.group(`Checking for existing workflows`, async () => {
+              const workflows = fs.readdirSync('.github/workflows').filter(file => file.endsWith('.yml') || file.endsWith('.yaml'));
+              if (workflows.length > 0) {
+                core.info(`${workflows.length} workflows found.`);
+                core.exportVariable('HAS_WORKFLOWS', 'true');
+              } else {
+                core.info("No workflows found, skipping zizmor scan.");
+              }
+            });
+
+            // https://docs.github.com/en/rest/code-scanning/code-scanning?apiVersion=2022-11-28#list-code-scanning-alerts-for-a-repository
+            await core.group(`Check if Advanced Security is enabled on this repository`, async () => {
+              await github.request('GET /repos/{owner}/{repo}/code-scanning/alerts', {
+                ...context.repo,
+              }).then(res => {
+                core.info('Advanced Security enabled.');
+                core.exportVariable('ADVANCED_SECURITY_ENABLED', 'true');
+              }).catch(error => {
+                if (error.status === 403) {
+                  core.warning('Advanced Security is not enabled on this repository. SARIF report will not be uploaded.');
+                } else {
+                  core.warning(`Error checking Advanced Security status (${error.status}: ${error.message})`);
+                }
+              });
+            });
       -
         name: Setup uv
         if: ${{ env.HAS_WORKFLOWS }}
@@ -52,20 +71,28 @@ jobs:
             const os = require('os');
             const path = require('path');
 
-            const res = await exec.getExecOutput('uvx', ['zizmor', '--format', 'sarif', ...core.getInput('args').split(' '), '.'], {
+            const uvxArgs = ['zizmor'];
+            if (process.env.ADVANCED_SECURITY_ENABLED) {
+              uvxArgs.push('--format', 'sarif');
+            }
+            uvxArgs.push(...core.getInput('args').split(' '), '.');
+
+            const res = await exec.getExecOutput('uvx', uvxArgs, {
               ignoreReturnCode: true
             });
             if (res.stderr.length > 0 && res.exitCode != 0) {
               throw new Error(res.stderr);
             }
 
-            const resultFile = path.join(fs.mkdtempSync(path.join(`${{ runner.temp }}` || os.tmpdir(), 'zizmor-')), 'results.sarif');
-            core.info(`Storing results in ${resultFile}`);
-            await fs.writeFileSync(resultFile, res.stdout);
-            core.setOutput('result-file', resultFile);
+            if (process.env.ADVANCED_SECURITY_ENABLED) {
+              const resultFile = path.join(fs.mkdtempSync(path.join(`${{ runner.temp }}` || os.tmpdir(), 'zizmor-')), 'results.sarif');
+              core.info(`Storing results in ${resultFile}`);
+              await fs.writeFileSync(resultFile, res.stdout);
+              core.setOutput('result-file', resultFile);
+            }
       -
         name: Upload SARIF report
-        if: ${{ env.HAS_WORKFLOWS }}
+        if: ${{ env.HAS_WORKFLOWS && env.ADVANCED_SECURITY_ENABLED }}
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: ${{ steps.zizmor.outputs.result-file }}
