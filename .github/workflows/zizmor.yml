@@ -22,9 +22,13 @@ jobs:
       -
         name: Prepare
         uses: actions/github-script@v7
+        env:
+          INPUT_ARGS: ${{ inputs.args }}
         with:
           script: |
             const fs = require('fs');
+            const os = require('os');
+            const path = require('path');
 
             await core.group(`Checking for existing workflows`, async () => {
               const workflows = fs.readdirSync('.github/workflows').filter(file => file.endsWith('.yml') || file.endsWith('.yaml'));
@@ -37,11 +41,13 @@ jobs:
             });
 
             // https://docs.github.com/en/rest/code-scanning/code-scanning?apiVersion=2022-11-28#list-code-scanning-alerts-for-a-repository
+            let advancedSecurityEnabled = false;
             await core.group(`Check if Advanced Security is enabled on this repository`, async () => {
               await github.request('GET /repos/{owner}/{repo}/code-scanning/alerts', {
                 ...context.repo,
               }).then(res => {
                 core.info('Advanced Security enabled.');
+                advancedSecurityEnabled = true;
                 core.exportVariable('ADVANCED_SECURITY_ENABLED', 'true');
               }).catch(error => {
                 if (error.status === 403) {
@@ -51,6 +57,24 @@ jobs:
                 }
               });
             });
+
+            await core.group(`Setting zizmor args`, async () => {
+              const resultFile = path.join(fs.mkdtempSync(path.join(`${{ runner.temp }}` || os.tmpdir(), 'zizmor-')), 'results.sarif');
+              const zizmorArgs = [];
+              if (advancedSecurityEnabled) {
+                zizmorArgs.push('--format', 'sarif');
+              } else {
+                zizmorArgs.push('--format', 'plain');
+              }
+              zizmorArgs.push(...core.getInput('args').split(' '), '.');
+              core.info(zizmorArgs.join(' '));
+              core.exportVariable('ZIZMOR_ARGS', zizmorArgs.join(' '));
+              if (advancedSecurityEnabled) {
+                core.exportVariable('ZIZMOR_RESULT', resultFile);
+              } else {
+                core.exportVariable('ZIZMOR_RESULT', '&1');
+              }
+            });
       -
         name: Setup uv
         if: ${{ env.HAS_WORKFLOWS }}
@@ -59,41 +83,22 @@ jobs:
           enable-cache: false
       -
         name: Install zizmor
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await exec.exec('uv', ['tool', 'install', 'zizmor']);
+        if: ${{ env.HAS_WORKFLOWS }}
+        run: |
+          set -ex
+          uv tool install zizmor
       -
         name: Run zizmor
         if: ${{ env.HAS_WORKFLOWS }}
-        uses: actions/github-script@v7
-        id: zizmor
         env:
-          INPUT_ARGS: ${{ inputs.args }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          script: |
-            const fs = require('fs');
-            const os = require('os');
-            const path = require('path');
-
-            const res = await exec.getExecOutput('zizmor', ['--format', 'sarif', ...core.getInput('args').split(' '), '.'], {
-              ignoreReturnCode: true
-            });
-            if (res.stderr.length > 0 && res.exitCode != 0) {
-              throw new Error(res.stderr);
-            }
-
-            if (process.env.ADVANCED_SECURITY_ENABLED) {
-              const resultFile = path.join(fs.mkdtempSync(path.join(`${{ runner.temp }}` || os.tmpdir(), 'zizmor-')), 'results.sarif');
-              core.info(`Storing SARIF report in ${resultFile}`);
-              await fs.writeFileSync(resultFile, res.stdout);
-              core.setOutput('result-file', resultFile);
-            }
+        run: |
+          set -ex
+          zizmor ${ZIZMOR_ARGS} > ${ZIZMOR_RESULT}
       -
         name: Upload SARIF report
-        if: ${{ env.HAS_WORKFLOWS && env.ADVANCED_SECURITY_ENABLED }}
+        if: ${{ env.HAS_WORKFLOWS && env.ADVANCED_SECURITY_ENABLED && env.ZIZMOR_RESULT }}
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: ${{ steps.zizmor.outputs.result-file }}
+          sarif_file: ${{ env.ZIZMOR_RESULT }}
           category: zizmor
