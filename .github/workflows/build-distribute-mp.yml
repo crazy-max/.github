@@ -50,6 +50,10 @@ on:
         description: "Enable build summary generation"
         required: false
         default: true
+      envs:
+        type: string
+        description: "Environment variables to set"
+        required: false
       # same as docker/metadata-action inputs (minus sep-tags, sep-labels, sep-annotations, bake-target)
       meta-image:
         type: string
@@ -227,6 +231,12 @@ jobs:
       includes: ${{ steps.set.outputs.includes }}
     steps:
       -
+        name: Environment variables
+        run: |
+          for l in "${{ inputs.envs }}"; do
+            echo "${l?}" >> $GITHUB_ENV
+          done
+      -
         name: Install npm dependencies
         uses: actions/github-script@v7
         with:
@@ -279,6 +289,12 @@ jobs:
   warmup:
     runs-on: ${{ inputs.runner == 'auto' && 'ubuntu-latest' || inputs.runner }}
     steps:
+      -
+        name: Environment variables
+        run: |
+          for l in "${{ inputs.envs }}"; do
+            echo "${l?}" >> $GITHUB_ENV
+          done
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -436,6 +452,12 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.prepare.outputs.includes) }}
     steps:
+      -
+        name: Environment variables
+        run: |
+          for l in "${{ inputs.envs }}"; do
+            echo "${l?}" >> $GITHUB_ENV
+          done
       -
         name: Docker meta
         id: meta
