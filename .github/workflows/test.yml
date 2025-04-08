@@ -257,6 +257,7 @@ jobs:
       build-platforms: linux/amd64,linux/arm64
       push: ${{ github.event_name != 'pull_request' }}
       cache: true
+      cache-warmup: false
       cache-scope: build-buildx-bin
       summary: false
       envs: |
@@ -279,6 +280,7 @@ jobs:
       target: image-cross
       push: ${{ github.event_name != 'pull_request' }}
       cache: true
+      cache-warmup: false
       cache-scope: bake-buildx-bin
       summary: false
       envs: |

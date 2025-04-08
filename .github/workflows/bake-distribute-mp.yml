@@ -25,6 +25,11 @@ on:
         description: "Enable cache to GitHub Actions cache backend"
         required: false
         default: false
+      cache-warmup:
+        type: boolean
+        description: "Enable cache warmup if cache is enabled"
+        required: false
+        default: true
       cache-scope:
         type: string
         description: "Which scope cache object belongs to if cache enabled (default is target name)"
@@ -295,6 +300,7 @@ jobs:
     steps:
       -
         name: Environment variables
+        if: ${{ inputs.cache && inputs.cache-warmup }}
         run: |
           for l in "${{ inputs.envs }}"; do
             echo "${l?}" >> $GITHUB_ENV
@@ -302,12 +308,13 @@ jobs:
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-        if: ${{ inputs.setup-qemu }}
+        if: ${{ inputs.cache && inputs.cache-warmup && inputs.setup-qemu }}
         with:
           image: ${{ inputs.qemu-image }}
       -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        if: ${{ inputs.cache && inputs.cache-warmup }}
         with:
           version: ${{ inputs.buildx-version }}
           driver-opts: ${{ inputs.buildx-driver-opts }}
@@ -318,7 +325,7 @@ jobs:
       -
         name: Warm up cache
         uses: docker/bake-action@v6
-        if: ${{ inputs.cache }}
+        if: ${{ inputs.cache && inputs.cache-warmup }}
         with:
           source: ${{ inputs.bake-source }}
           files: ${{ inputs.bake-files }}
@@ -497,6 +504,7 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
           INPUT_TARGET: ${{ inputs.target }}
           INPUT_CACHE: ${{ inputs.cache }}
+          INPUT_CACHE-WARMUP: ${{ inputs.cache-warmup }}
           INPUT_CACHE-SCOPE: ${{ inputs.cache-scope }}
           INPUT_CACHE-MODE: ${{ inputs.cache-mode }}
           INPUT_SET-META-ANNOTATIONS: ${{ inputs.set-meta-annotations }}
@@ -516,6 +524,7 @@ jobs:
             const platformPair = process.env.PLATFORM.replace(/\//g, '-');
             const inpTarget = core.getInput('target');
             const inpCache = core.getBooleanInput('cache');
+            const inpCacheWarmup = core.getBooleanInput('cache-warmup');
             const inpCacheScope = core.getInput('cache-scope');
             const inpCacheMode = core.getInput('cache-mode');
             let bakeFiles = Util.getInputList('bake-files');
@@ -540,7 +549,9 @@ jobs:
             await core.group(`Set bake overrides`, async () => {
               let bakeOverrides = [];
               if (inpCache) {
-                bakeOverrides.push(`*.cache-from=type=gha,scope=${inpCacheScope || inpTarget}-warmup`);
+                if (inpCacheWarmup) {
+                  bakeOverrides.push(`*.cache-from=type=gha,scope=${inpCacheScope || inpTarget}-warmup`);
+                }
                 bakeOverrides.push(`*.cache-from=type=gha,scope=${inpCacheScope || inpTarget}-${platformPair}`);
                 bakeOverrides.push(`*.cache-to=type=gha,scope=${inpCacheScope || inpTarget}-${platformPair},mode=${inpCacheMode}`);
               }
