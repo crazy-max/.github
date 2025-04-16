@@ -27,24 +27,24 @@ jobs:
               return;
             }
 
-            const resp = await github.rest.issues.checkUserCanBeAssignedToIssue({
+            const respCheck = await github.rest.issues.checkUserCanBeAssignedToIssue({
               ...context.repo,
               issue_number: number,
               assignee: author
             });
-            core.debug(`checkUserCanBeAssignedToIssue resp: ${JSON.stringify(resp, null, 2)}`);
-            if (resp.status !== 204) {
+            core.debug(`checkUserCanBeAssignedToIssue resp: ${JSON.stringify(respCheck, null, 2)}`);
+            if (respCheck.status !== 204) {
               core.warning(`Cannot assign @${author} to the pull request #${number}, skipping.`);
               return;
             }
 
-            const resp = await github.rest.issues.addAssignees({
+            const respAdd = await github.rest.issues.addAssignees({
               ...context.repo,
               issue_number: number,
               assignees: [author]
             });
-            core.debug(`addAssignees resp: ${JSON.stringify(resp, null, 2)}`);
-            if (resp.status !== 201) {
+            core.debug(`addAssignees resp: ${JSON.stringify(respAdd, null, 2)}`);
+            if (respAdd.status !== 201) {
               core.setFailed(`Failed to assign @${author} to the pull request #${number}`);
               return;
             }
