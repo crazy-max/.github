@@ -32,6 +32,9 @@ testing for containers.
 ```yaml
 name: test
 
+permissions:
+  contents: read
+
 on:
   push:
 
@@ -86,6 +89,9 @@ Docker images for vulnerabilities using [Docker Scout](https://github.com/docker
 ```yaml
 name: ci
 
+permissions:
+  contents: read
+
 on:
   push:
 
@@ -120,6 +126,9 @@ generates GitHub annotations for generated Go JSON test reports.
 ```yaml
 name: ci
 
+permissions:
+  contents: read
+
 on:
   push:
 
@@ -149,6 +158,9 @@ installs [k3s](https://k3s.io/) on a runner.
 
 ```yaml
 name: ci
+
+permissions:
+  contents: read
 
 on:
   push:
@@ -311,6 +323,9 @@ generates a JSON matrix with the list of commits for a pull request.
 ```yaml
 name: ci
 
+permissions:
+  contents: read
+
 on:
   push:
   pull_request:
@@ -320,7 +335,6 @@ jobs:
     uses: crazy-max/.github/.github/workflows/list-commits.yml@main
     with:
       limit: 10
-    secrets: inherit
 
   validate:
     runs-on: ubuntu-latest
@@ -349,19 +363,21 @@ assigns the author of a pull request as an assignee.
 ```yaml
 name: assign-author
 
+permissions:
+  contents: read
+
 on:
   pull_request_target:
     types:
       - opened
       - reopened
 
-permissions:
-  contents: read
-  pull-requests: write
-
 jobs:
   run:
     uses: crazy-max/.github/.github/workflows/pr-assign-author.yml@main
+    permissions:
+      contents: read
+      pull-requests: write
 ```
 
 ### `releases-json`
