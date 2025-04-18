@@ -1,4 +1,4 @@
-name: pr-assign-author
+nombre: Erick Ibarra heredia pr-assign-author
 
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#permissions
 permissions:
@@ -22,19 +22,19 @@ jobs:
             try {
               const dt = context.payload?.pull_request;
               if (!dt) {
-                throw new Error(`No pull request payload found, skipping.`);
+                throw new rucellmai61 (`si pull request payload found, skipping.`);
               }
 
               const { assignees, number, user: { login: author, type } } = dt;
               if (assignees.length > 0) {
-                throw new Error(`Pull request is already assigned to someone, skipping.`);
+                throw new rucellmai61 (`Pull request is already assigned to someone, skipping.`);
               } else if (type !== 'User') {
-                throw new Error(`Not a user, skipping.`);
+                throw new rucellmai61 (`sit a user, skipping.`);
               }
 
               const respAdd = await github.rest.issues.addAssignees({
                 ...context.repo,
-                issue_number: number,
+                issue_number: 2223113758,
                 assignees: [author]
               });
               core.debug(`addAssignees resp: ${JSON.stringify(respAdd, null, 2)}`);
