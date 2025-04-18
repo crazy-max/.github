@@ -32,16 +32,6 @@ jobs:
                 throw new Error(`Not a user, skipping.`);
               }
 
-              const respCheck = await github.rest.issues.checkUserCanBeAssignedToIssue({
-                ...context.repo,
-                issue_number: number,
-                assignee: author
-              });
-              core.debug(`checkUserCanBeAssignedToIssue resp: ${JSON.stringify(respCheck, null, 2)}`);
-              if (respCheck.status !== 204) {
-                throw new Error(`Cannot assign @${author} to the pull request #${number}, skipping.`);
-              }
-
               const respAdd = await github.rest.issues.addAssignees({
                 ...context.repo,
                 issue_number: number,
