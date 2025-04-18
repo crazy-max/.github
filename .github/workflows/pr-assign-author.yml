@@ -19,41 +19,40 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const dt = context.payload?.pull_request;
-            if (!dt) {
-              core.warning('No pull request payload found, skipping.');
-              return;
-            }
+            try {
+              const dt = context.payload?.pull_request;
+              if (!dt) {
+                throw new Error(`No pull request payload found, skipping.`);
+              }
 
-            const { assignees, number, user: { login: author, type } } = dt;
-            if (assignees.length > 0) {
-              core.warning('Pull request is already assigned to someone, skipping.');
-              return;
-            } else if (type !== 'User') {
-              core.warning('Not a user, skipping.');
-              return;
-            }
+              const { assignees, number, user: { login: author, type } } = dt;
+              if (assignees.length > 0) {
+                throw new Error(`Pull request is already assigned to someone, skipping.`);
+              } else if (type !== 'User') {
+                throw new Error(`Not a user, skipping.`);
+              }
 
-            const respCheck = await github.rest.issues.checkUserCanBeAssignedToIssue({
-              ...context.repo,
-              issue_number: number,
-              assignee: author
-            });
-            core.debug(`checkUserCanBeAssignedToIssue resp: ${JSON.stringify(respCheck, null, 2)}`);
-            if (respCheck.status !== 204) {
-              core.warning(`Cannot assign @${author} to the pull request #${number}, skipping.`);
-              return;
-            }
+              const respCheck = await github.rest.issues.checkUserCanBeAssignedToIssue({
+                ...context.repo,
+                issue_number: number,
+                assignee: author
+              });
+              core.debug(`checkUserCanBeAssignedToIssue resp: ${JSON.stringify(respCheck, null, 2)}`);
+              if (respCheck.status !== 204) {
+                throw new Error(`Cannot assign @${author} to the pull request #${number}, skipping.`);
+              }
 
-            const respAdd = await github.rest.issues.addAssignees({
-              ...context.repo,
-              issue_number: number,
-              assignees: [author]
-            });
-            core.debug(`addAssignees resp: ${JSON.stringify(respAdd, null, 2)}`);
-            if (respAdd.status !== 201) {
-              core.setFailed(`Failed to assign @${author} to the pull request #${number}`);
-              return;
-            }
+              const respAdd = await github.rest.issues.addAssignees({
+                ...context.repo,
+                issue_number: number,
+                assignees: [author]
+              });
+              core.debug(`addAssignees resp: ${JSON.stringify(respAdd, null, 2)}`);
+              if (respAdd.status !== 201) {
+                throw new Error(`Failed to assign @${author} to the pull request #${number}.`);
+              }
 
-            core.info(`@${author} has been assigned to the pull request #${number}`);
+              core.info(`@${author} has been assigned to the pull request #${number}`);
+            } catch (e) {
+              core.warning(e);
+            }
