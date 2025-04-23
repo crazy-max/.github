@@ -44,5 +44,5 @@ jobs:
 
               core.info(`@${author} has been assigned to the pull request #${number}`);
             } catch (e) {
-              core.warning(e);
+              core.warning(e.message);
             }
