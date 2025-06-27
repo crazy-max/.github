@@ -193,6 +193,8 @@ jobs:
         name: Checkout
         uses: actions/checkout@v4
         if: ${{ inputs.bake-source == '.' }}
+        with:
+          fetch-depth: 0
       -
         name: Environment variables
         run: |
@@ -306,6 +308,8 @@ jobs:
         name: Checkout
         uses: actions/checkout@v4
         if: ${{ inputs.bake-source == '.' }}
+        with:
+          fetch-depth: 0
       -
         name: Environment variables
         if: ${{ inputs.cache && inputs.cache-warmup }}
@@ -467,6 +471,8 @@ jobs:
         name: Checkout
         uses: actions/checkout@v4
         if: ${{ inputs.bake-source == '.' }}
+        with:
+          fetch-depth: 0
       -
         name: Environment variables
         run: |
