@@ -24,7 +24,7 @@ jobs:
       -
         name: Generate matrix
         id: generate
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           retries: 3
           script: |
