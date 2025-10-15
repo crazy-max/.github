@@ -21,6 +21,9 @@ on:
       pin_latest:
         required: false
         type: string
+      tag_pattern:
+        required: false
+        type: string
 
 jobs:
   generate:
@@ -40,14 +43,30 @@ jobs:
         name: Generate
         id: generate
         uses: actions/github-script@v8
+        env:
+          INPUT_REPOSITORY: ${{ inputs.repository }}
+          INPUT_FILENAME: ${{ inputs.filename }}
+          INPUT_PIN_LATEST: ${{ inputs.pin_latest }}
+          INPUT_TAG_PATTERN: ${{ inputs.tag_pattern }}
         with:
           retries: 3
           script: |
             const fs = require('fs');
             const semver = require('semver');
 
+            function extractVersion(tag, pattern) {
+              if (!pattern) return tag;
+              const match = tag.match(new RegExp(pattern));
+              return match && match[1] ? match[1] : tag;
+            }
+
+            const inpRepository = core.getInput('repository');
+            const inpFilename = core.getInput('filename');
+            const inpPinLatest = core.getInput('pin_latest');
+            const inpTagPattern = core.getInput('tag_pattern');
+
             let res = {};
-            const [owner, repo] = `${{ inputs.repository }}`.split('/');
+            const [owner, repo] = inpRepository.split('/');
             core.info(`Fetching releases for ${owner}/${repo}`);
 
             const latestRelease = await github.rest.repos.getLatestRelease({
@@ -61,8 +80,6 @@ jobs:
               assets: latestRelease.data.assets.map(asset => asset.browser_download_url).sort(),
             };
 
-            const pinLatest = `${{ inputs.pin_latest }}`;
-
             const releases = await github.paginate(github.rest.repos.listReleases.endpoint.merge({
               owner,
               repo,
@@ -71,8 +88,10 @@ jobs:
               if (release.draft) {
                 continue;
               }
+              const latestVersion = extractVersion(res['latest'].tag_name, inpTagPattern);
+              const version = extractVersion(release.tag_name, inpTagPattern);
               if (!res['edge'] && release.prerelease) {
-                if (semver.gt(release.tag_name, res['latest'].tag_name)) {
+                if (semver.gt(version, latestVersion)) {
                   res['edge'] = {
                     id: release.id,
                     tag_name: release.tag_name,
@@ -83,7 +102,7 @@ jobs:
                   res['edge'] = res['latest'];
                 }
               }
-              if (pinLatest && release.tag_name === pinLatest) {
+              if (inpPinLatest && version === inpPinLatest) {
                 res['latest'] = {
                   id: release.id,
                   tag_name: release.tag_name,
@@ -91,7 +110,7 @@ jobs:
                   assets: release.assets.map(asset => asset.browser_download_url).sort(),
                 };
               }
-              res[release.tag_name] = {
+              res[version] = {
                 id: release.id,
                 tag_name: release.tag_name,
                 html_url: release.html_url,
@@ -99,7 +118,7 @@ jobs:
               };
             }
 
-            await fs.writeFileSync('${{ inputs.filename }}', JSON.stringify(res, null, 2));
+            await fs.writeFileSync(inpFilename, JSON.stringify(res, null, 2));
       -
         name: Check file
         run: |
