@@ -30,7 +30,7 @@ jobs:
     steps:
       -
         name: Install npm deps
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await core.group(`Install npm deps`, async () => {
@@ -39,7 +39,7 @@ jobs:
       -
         name: Generate
         id: generate
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           retries: 3
           script: |
