@@ -30,7 +30,7 @@ jobs:
     steps:
       -
         name: Download
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: buildx-releases-json
           path: .
@@ -53,7 +53,7 @@ jobs:
     steps:
       -
         name: Download
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: test-edge-releases-json
           path: .
@@ -77,7 +77,7 @@ jobs:
     steps:
       -
         name: Download
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: buildx-releases-pin-json
           path: .
@@ -101,7 +101,7 @@ jobs:
     steps:
       -
         name: Download
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: moby-releases-json
           path: .
