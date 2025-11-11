@@ -92,7 +92,9 @@ jobs:
       repository: moby/moby
       artifact_name: moby-releases-json
       filename: moby-releases.json
-      tag_pattern: '^docker-(.*)$'
+      tag_patterns: |
+        ^docker-(.*)$
+        ^v(.*)$
 
   releases-json-pattern-check:
     runs-on: ubuntu-latest
