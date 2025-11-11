@@ -21,7 +21,7 @@ on:
       pin_latest:
         required: false
         type: string
-      tag_pattern:
+      tag_patterns:
         required: false
         type: string
 
@@ -47,23 +47,30 @@ jobs:
           INPUT_REPOSITORY: ${{ inputs.repository }}
           INPUT_FILENAME: ${{ inputs.filename }}
           INPUT_PIN_LATEST: ${{ inputs.pin_latest }}
-          INPUT_TAG_PATTERN: ${{ inputs.tag_pattern }}
+          INPUT_TAG_PATTERNS: ${{ inputs.tag_patterns }}
         with:
           retries: 3
           script: |
             const fs = require('fs');
             const semver = require('semver');
 
-            function extractVersion(tag, pattern) {
-              if (!pattern) return tag;
-              const match = tag.match(new RegExp(pattern));
-              return match && match[1] ? match[1] : tag;
+            function extractVersion(tag, patterns) {
+              if (patterns.length === 0) {
+                return tag;
+              }
+              for (const pattern of patterns) {
+                const match = tag.match(new RegExp(pattern));
+                if (match && match[1]) {
+                  return match[1];
+                }
+              }
+              return undefined;
             }
 
             const inpRepository = core.getInput('repository');
             const inpFilename = core.getInput('filename');
             const inpPinLatest = core.getInput('pin_latest');
-            const inpTagPattern = core.getInput('tag_pattern');
+            const inpTagPatterns = core.getMultilineInput('tag_patterns');
 
             let res = {};
             const [owner, repo] = inpRepository.split('/');
@@ -79,6 +86,10 @@ jobs:
               html_url: latestRelease.data.html_url,
               assets: latestRelease.data.assets.map(asset => asset.browser_download_url).sort(),
             };
+            const latestVersion = extractVersion(res['latest'].tag_name, inpTagPatterns);
+            if (!latestVersion) {
+              throw new Error(`Latest release tag ${res['latest'].tag_name} does not match any provided pattern`);
+            }
 
             const releases = await github.paginate(github.rest.repos.listReleases.endpoint.merge({
               owner,
@@ -88,8 +99,10 @@ jobs:
               if (release.draft) {
                 continue;
               }
-              const latestVersion = extractVersion(res['latest'].tag_name, inpTagPattern);
-              const version = extractVersion(release.tag_name, inpTagPattern);
+              const version = extractVersion(release.tag_name, inpTagPatterns);
+              if (!version) {
+                continue;
+              }
               if (!res['edge'] && release.prerelease) {
                 if (semver.gt(version, latestVersion)) {
                   res['edge'] = {
