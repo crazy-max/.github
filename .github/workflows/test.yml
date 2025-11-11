@@ -94,7 +94,7 @@ jobs:
       filename: moby-releases.json
       tag_patterns: |
         ^docker-(.*)$
-        ^v(.*)$
+        ^(v.*)$
 
   releases-json-pattern-check:
     runs-on: ubuntu-latest
