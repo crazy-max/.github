@@ -191,7 +191,7 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         if: ${{ inputs.bake-source == '.' }}
         with:
           fetch-depth: 0
@@ -306,7 +306,7 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         if: ${{ inputs.bake-source == '.' }}
         with:
           fetch-depth: 0
@@ -469,7 +469,7 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         if: ${{ inputs.bake-source == '.' }}
         with:
           fetch-depth: 0
