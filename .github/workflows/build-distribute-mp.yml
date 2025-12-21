@@ -582,9 +582,11 @@ jobs:
         name: Set digest output
         id: digest
         uses: actions/github-script@v8
+        env:
+          INPUT_METADATA: ${{ steps.build.outputs.metadata }}
         with:
           script: |
-            const metadata = JSON.parse(`${{ steps.build.outputs.metadata }}`);
+            const metadata = JSON.parse(core.getInput('metadata'));
             const digest = metadata['containerimage.digest'];
             const outputKey = `digest_${{ matrix.index }}`;
             core.info(`Setting digest output: ${outputKey}=${digest}`);
