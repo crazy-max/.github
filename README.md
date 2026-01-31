@@ -180,6 +180,9 @@ jobs:
 
 ### `build-distribute-mp`
 
+> [!WARNING]
+> This reusable workflow has been deprecated in favor of [Docker GitHub Builder](https://github.com/docker/github-builder)
+
 [`build-distribute-mp` reusable workflow](.github/workflows/build-distribute-mp.yml)
 distributes multi-platform builds across runners efficiently.
 
@@ -230,6 +233,9 @@ Here are the main inputs for this reusable workflow:
 You can find the list of available inputs directly in [the reusable workflow](.github/workflows/build-distribute-mp.yml).
 
 ### `bake-distribute-mp`
+
+> [!WARNING]
+> This reusable workflow has been deprecated in favor of [Docker GitHub Builder](https://github.com/docker/github-builder)
 
 [`bake-distribute-mp` reusable workflow](.github/workflows/bake-distribute-mp.yml)
 distributes multi-platform builds across runners efficiently.

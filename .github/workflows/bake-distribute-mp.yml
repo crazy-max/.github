@@ -190,6 +190,12 @@ jobs:
       includes: ${{ steps.set.outputs.includes }}
     steps:
       -
+        name: Deprecation notice
+        uses: actions/github-script@v8
+        with:
+          script: |
+            core.warning(`bake-distribute-mp reusable workflow has been deprecated in favor of https://github.com/docker/github-builder`);
+      -
         name: Checkout
         uses: actions/checkout@v6
         if: ${{ inputs.bake-source == '.' }}

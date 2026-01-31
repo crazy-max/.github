@@ -236,6 +236,12 @@ jobs:
       includes: ${{ steps.set.outputs.includes }}
     steps:
       -
+        name: Deprecation notice
+        uses: actions/github-script@v8
+        with:
+          script: |
+            core.warning(`build-distribute-mp reusable workflow has been deprecated in favor of https://github.com/docker/github-builder`);
+      -
         name: Environment variables
         run: |
           for l in "${{ inputs.envs }}"; do
