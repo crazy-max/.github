@@ -325,7 +325,7 @@ jobs:
           done
       -
         name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         if: ${{ inputs.cache && inputs.cache-warmup && inputs.setup-qemu }}
         with:
           image: ${{ inputs.qemu-image }}
@@ -506,7 +506,7 @@ jobs:
           password: ${{ secrets.login-password }}
       -
         name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         if: ${{ inputs.setup-qemu }}
         with:
           image: ${{ inputs.qemu-image }}
