@@ -326,7 +326,7 @@ jobs:
           cache-binary: ${{ inputs.buildx-cache-binary }}
       -
         name: Warm up cache
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         if: ${{ inputs.cache && inputs.cache-warmup }}
         with:
           add-hosts: ${{ inputs.build-add-hosts }}
@@ -553,7 +553,7 @@ jobs:
       -
         name: Build
         id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           add-hosts: ${{ inputs.build-add-hosts }}
           allow: ${{ inputs.build-allow }}
