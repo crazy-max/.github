@@ -191,13 +191,13 @@ jobs:
     steps:
       -
         name: Deprecation notice
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           script: |
             core.warning(`bake-distribute-mp reusable workflow has been deprecated in favor of https://github.com/docker/github-builder`);
       -
         name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: ${{ inputs.bake-source == '.' }}
         with:
           fetch-depth: 0
@@ -209,7 +209,7 @@ jobs:
           done
       -
         name: Install npm dependencies
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           script: |
             await exec.exec('npm', ['install',
@@ -219,7 +219,7 @@ jobs:
       -
         name: Set includes
         id: set
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         env:
           INPUT_RUNNER: ${{ inputs.runner }}
           INPUT_TARGET: ${{ inputs.target }}
@@ -312,7 +312,7 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: ${{ inputs.bake-source == '.' }}
         with:
           fetch-depth: 0
@@ -325,13 +325,13 @@ jobs:
           done
       -
         name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
         if: ${{ inputs.cache && inputs.cache-warmup && inputs.setup-qemu }}
         with:
           image: ${{ inputs.qemu-image }}
       -
         name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
         if: ${{ inputs.cache && inputs.cache-warmup }}
         with:
           version: ${{ inputs.buildx-version }}
@@ -342,7 +342,7 @@ jobs:
           cache-binary: ${{ inputs.buildx-cache-binary }}
       -
         name: Warm up cache
-        uses: docker/bake-action@v7
+        uses: docker/bake-action@82490499d2e5613fcead7e128237ef0b0ea210f7 # v7.0.0
         if: ${{ inputs.cache && inputs.cache-warmup }}
         with:
           source: ${{ inputs.bake-source }}
@@ -475,7 +475,7 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         if: ${{ inputs.bake-source == '.' }}
         with:
           fetch-depth: 0
@@ -488,7 +488,7 @@ jobs:
       -
         name: Docker meta
         id: meta
-        uses: docker/metadata-action@v6
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
         with:
           images: ${{ inputs.meta-image }}
           tags: ${{ inputs.meta-tags }}
@@ -498,7 +498,7 @@ jobs:
           bake-target: ${{ inputs.meta-bake-target }}
       -
         name: Login to registry
-        uses: docker/login-action@v4
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
         if: ${{ inputs.push }}
         with:
           registry: ${{ inputs.login-registry }}
@@ -506,13 +506,13 @@ jobs:
           password: ${{ secrets.login-password }}
       -
         name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
+        uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
         if: ${{ inputs.setup-qemu }}
         with:
           image: ${{ inputs.qemu-image }}
       -
         name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
         with:
           version: ${{ inputs.buildx-version }}
           driver-opts: ${{ inputs.buildx-driver-opts }}
@@ -523,7 +523,7 @@ jobs:
       -
         name: Set bake files and overrides
         id: bake-opts
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         env:
           PLATFORM: ${{ matrix.platform }}
           INPUT_TARGET: ${{ inputs.target }}
@@ -585,7 +585,7 @@ jobs:
       -
         name: Build
         id: bake
-        uses: docker/bake-action@v7
+        uses: docker/bake-action@82490499d2e5613fcead7e128237ef0b0ea210f7 # v7.0.0
         with:
           source: ${{ inputs.bake-source }}
           files: ${{ steps.bake-opts.outputs.files }}
@@ -607,7 +607,7 @@ jobs:
       -
         name: Set digest output
         id: digest
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         env:
           INPUT_TARGET: ${{ inputs.target }}
           INPUT_METADATA: ${{ steps.bake.outputs.metadata }}
@@ -627,7 +627,7 @@ jobs:
       -
         name: Docker meta
         id: meta
-        uses: docker/metadata-action@v6
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
         with:
           images: ${{ inputs.meta-image }}
           tags: ${{ inputs.meta-tags }}
@@ -635,7 +635,7 @@ jobs:
           bake-target: ${{ inputs.meta-bake-target }}
       -
         name: Login to registry
-        uses: docker/login-action@v4
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
         if: ${{ inputs.push }}
         with:
           registry: ${{ inputs.login-registry }}
@@ -643,7 +643,7 @@ jobs:
           password: ${{ secrets.login-password }}
       -
         name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
         with:
           version: ${{ inputs.buildx-version }}
           driver-opts: ${{ inputs.buildx-driver-opts }}
@@ -653,7 +653,7 @@ jobs:
           cache-binary: ${{ inputs.buildx-cache-binary }}
       -
         name: Create manifest list
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         env:
           INPUT_PUSH: ${{ inputs.push }}
           INPUT_META-IMAGE: ${{ inputs.meta-image }}

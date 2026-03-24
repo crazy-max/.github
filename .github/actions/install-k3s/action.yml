@@ -12,20 +12,22 @@ runs:
   using: "composite"
   steps:
     -
-      uses: actions/github-script@v8
+      uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+      env:
+        INPUT_VERSION: ${{ inputs.version }}
       with:
         script: |
           const fs = require('fs');
           const os = require('os');
           const path = require('path');
 
-          const tmpDir = fs.mkdtempSync(path.join(`${{ runner.temp }}` || os.tmpdir(), 'install-k3s-'));
+          const tmpDir = fs.mkdtempSync(path.join(process.env.RUNNER_TEMP || os.tmpdir(), 'install-k3s-'));
           const kubeconfig = `${tmpDir}/kubeconfig.yaml`;
           core.info(`Storing kubeconfig in ${kubeconfig}`);
 
           await exec.exec('sh', ['-c', 'curl -sfL https://get.k3s.io | sh -'], {
             env: Object.assign({}, process.env, {
-              INSTALL_K3S_VERSION: '${{ inputs.version }}',
+              INSTALL_K3S_VERSION: core.getInput('version'),
               INSTALL_K3S_EXEC: `--disable traefik --disable metrics-server --write-kubeconfig-mode 666 --write-kubeconfig ${kubeconfig}`,
             })
           });
