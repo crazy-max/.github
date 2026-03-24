@@ -1,0 +1,120 @@
+name: zizmor
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: false
+        type: string
+      collect:
+        required: false
+        type: string
+      min-severity:
+        required: false
+        type: string
+      min-confidence:
+        required: false
+        type: string
+      persona:
+        required: false
+        type: string
+      offline:
+        required: false
+        type: boolean
+        default: false
+      no-online-audits:
+        required: false
+        type: boolean
+        default: false
+      strict-collection:
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  zizmor:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      -
+        name: Setup uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+        with:
+          enable-cache: false
+      -
+        name: Install zizmor
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        with:
+          script: |
+            const inpVersion = core.getInput('version');
+            await exec.exec('uv', ['tool', 'install', `zizmor${inpVersion ? `@${inpVersion}` : ''}`]);
+      -
+        name: Run zizmor
+        id: zizmor
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          INPUT_COLLECT: ${{ inputs.collect }}
+          INPUT_MIN-SEVERITY: ${{ inputs.min-severity }}
+          INPUT_MIN-CONFIDENCE: ${{ inputs.min-confidence }}
+          INPUT_PERSONA: ${{ inputs.persona }}
+          INPUT_OFFLINE: ${{ inputs.offline }}
+          INPUT_NO-ONLINE-AUDITS: ${{ inputs.no-online-audits }}
+          INPUT_STRICT-COLLECTION: ${{ inputs.strict-collection }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            const fs = require('fs');
+            const os = require('os');
+            const path = require('path');
+
+            const inpCollect = core.getMultilineInput('collect');
+            const inpMinSeverity = core.getInput('min-severity');
+            const inpMinConfidence = core.getInput('min-confidence');
+            const inpPersona = core.getInput('persona');
+            const inpOffline = core.getBooleanInput('offline');
+            const inpNoOnlineAudits = core.getBooleanInput('no-online-audits');
+            const inpStrictCollection = core.getBooleanInput('strict-collection');
+
+            const args = ['--color=always', '--format=sarif'];
+            for (const item of inpCollect) {
+              args.push(`--collect=${item}`);
+            }
+            if (inpMinSeverity) {
+              args.push(`--min-severity=${inpMinSeverity}`);
+            }
+            if (inpMinConfidence) {
+              args.push(`--min-confidence=${inpMinConfidence}`);
+            }
+            if (inpPersona) {
+              args.push(`--persona=${inpPersona}`);
+            }
+            if (inpOffline) {
+              args.push('--offline');
+            }
+            if (inpNoOnlineAudits) {
+              args.push('--no-online-audits');
+            }
+            if (inpStrictCollection) {
+              args.push('--strict-collection');
+            }
+            args.push('./.github/');
+
+            const res = await exec.getExecOutput('zizmor', args);
+            const sarifPath = path.join(fs.mkdtempSync(path.join(process.env.RUNNER_TEMP || os.tmpdir(), 'zizmor-')), 'results.sarif');
+            await fs.writeFileSync(sarifPath, res.stdout.trim());
+            core.setOutput('sarif-path', sarifPath);
+      -
+        name: Upload SARIF report
+        uses: github/codeql-action/upload-sarif@b1bff81932f5cdfc8695c7752dcee935dcd061c8 # v4.33.0
+        with:
+          sarif_file: ${{ steps.zizmor.outputs.sarif-path }}
+          category: zizmor

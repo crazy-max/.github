@@ -225,10 +225,8 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event_name != 'pull_request' }}
     permissions:
-      # required to check out the repository
-      contents: read
-      # required to write sarif report
-      security-events: write
+      contents: read # required to check out the repository
+      security-events: write # required to write sarif report
     strategy:
       fail-fast: false
       matrix:
@@ -257,9 +255,3 @@ jobs:
         run: |
           set -x
           cat ${{ steps.scout.outputs.result-file }}
-      -
-        name: Upload SARIF report
-        if: ${{ matrix.format == 'sarif' }}
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: ${{ steps.scout.outputs.result-file }}
