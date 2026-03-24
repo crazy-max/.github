@@ -48,7 +48,7 @@ jobs:
           docker run -d --name test crazymax/samba:4.18.2
       -
         name: Check container logs
-        uses: crazy-max/.github/.github/actions/container-logs-check@main
+        uses: crazy-max/.github/.github/actions/container-logs-check@v1
         with:
           container_name: test
           log_check: " started."
@@ -105,7 +105,7 @@ jobs:
       -
         name: Scout
         id: scout
-        uses: crazy-max/.github/.github/actions/docker-scout@main
+        uses: crazy-max/.github/.github/actions/docker-scout@v1
         with:
           format: sarif
           image: alpine:latest
@@ -146,7 +146,7 @@ jobs:
           go test -coverprofile ./testreports/cover.out -json ./... > ./testreports/test-report.json
       -
         name: Generate annotations
-        uses: crazy-max/.github/.github/actions/gotest-annotations@main
+        uses: crazy-max/.github/.github/actions/gotest-annotations@v1
         with:
           directory: ./testreports
 ```
@@ -171,7 +171,7 @@ jobs:
     steps:
       -
         name: Install k3s
-        uses: crazy-max/.github/.github/actions/install-k3s@main
+        uses: crazy-max/.github/.github/actions/install-k3s@v1
         with:
           version: v1.32.2+k3s1
 ```
@@ -195,7 +195,7 @@ on:
 
 jobs:
   build:
-    uses: crazy-max/.github/.github/workflows/build-distribute-mp.yml@main
+    uses: crazy-max/.github/.github/workflows/build-distribute-mp.yml@v1
     with:
       push: ${{ github.event_name != 'pull_request' }}
       cache: true
@@ -284,7 +284,7 @@ on:
 
 jobs:
   build:
-    uses: crazy-max/.github/.github/workflows/bake-distribute-mp.yml@main
+    uses: crazy-max/.github/.github/workflows/bake-distribute-mp.yml@v1
     with:
       target: image-all
       push: ${{ github.event_name != 'pull_request' }}
@@ -338,7 +338,7 @@ on:
 
 jobs:
   list-commits:
-    uses: crazy-max/.github/.github/workflows/list-commits.yml@main
+    uses: crazy-max/.github/.github/workflows/list-commits.yml@v1
     with:
       limit: 10
 
@@ -380,7 +380,7 @@ on:
 
 jobs:
   run:
-    uses: crazy-max/.github/.github/workflows/pr-assign-author.yml@main
+    uses: crazy-max/.github/.github/workflows/pr-assign-author.yml@v1
     permissions:
       contents: read
       pull-requests: write
@@ -401,7 +401,7 @@ on:
 
 jobs:
   releases-json:
-    uses: crazy-max/.github/.github/workflows/releases-json.yml@main
+    uses: crazy-max/.github/.github/workflows/releases-json.yml@v1
     with:
       repository: docker/buildx
       artifact_name: buildx-releases-json
