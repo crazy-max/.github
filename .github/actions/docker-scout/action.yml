@@ -36,12 +36,16 @@ runs:
           const os = require('os');
           const path = require('path');
 
+          const inpVersion = core.getInput('version');
+          const inpFormat = core.getInput('format');
+          const inpImage = core.getInput('image');
+
           await core.group(`Pull docker/scout-cli image`, async () => {
-            await exec.exec(`docker pull docker.io/docker/scout-cli:${core.getInput('version')}`);
+            await exec.exec(`docker pull docker.io/docker/scout-cli:${inpVersion}`);
           });
 
           await core.group(`Copy binary`, async () => {
-            const res = await exec.getExecOutput('docker', ['create', 'docker.io/docker/scout-cli:${core.getInput('version')}'], {
+            const res = await exec.getExecOutput('docker', ['create', `docker.io/docker/scout-cli:${inpVersion}`], {
               ignoreReturnCode: true
             });
             if (res.stderr.length > 0 && res.exitCode != 0) {
@@ -80,4 +84,4 @@ runs:
 
           const resultPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'docker-scout-action-')), 'result.txt');
           core.setOutput('result-file', resultPath);
-          await exec.exec('docker', ['scout', 'cves', core.getInput('image'), '--format', core.getInput('format'), `--output`, resultPath]);
+          await exec.exec('docker', ['scout', 'cves', inpImage, '--format', inpFormat, `--output`, resultPath]);
