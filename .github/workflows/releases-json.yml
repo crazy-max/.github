@@ -33,7 +33,7 @@ jobs:
     steps:
       -
         name: Install npm deps
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           script: |
             await core.group(`Install npm deps`, async () => {
@@ -42,7 +42,7 @@ jobs:
       -
         name: Generate
         id: generate
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         env:
           INPUT_REPOSITORY: ${{ inputs.repository }}
           INPUT_FILENAME: ${{ inputs.filename }}
@@ -134,11 +134,15 @@ jobs:
             await fs.writeFileSync(inpFilename, JSON.stringify(res, null, 2));
       -
         name: Check file
-        run: |
-          jq . ${{ inputs.filename }}
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          INPUT_FILENAME: ${{ inputs.filename }}
+        with:
+          script: |
+            await exec.exec('jq', ['.', core.getInput('filename')]);
       -
         name: Upload artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: ${{ inputs.artifact_name }}
           path: ${{ inputs.filename }}

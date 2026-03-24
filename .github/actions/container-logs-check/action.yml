@@ -17,16 +17,20 @@ runs:
   using: composite
   steps:
     -
-      uses: actions/github-script@v8
+      uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+      env:
+        INPUT_CONTAINER_NAME: ${{ inputs.container_name }}
+        INPUT_LOG_CHECK: ${{ inputs.log_check }}
+        INPUT_TIMEOUT: ${{ inputs.timeout }}
       with:
         script: |
           const { spawn } = require('child_process');
 
           async function checkContainerLogs() {
             return new Promise((resolve, reject) => {
-              const containerName = `${{ inputs.container_name }}`;
-              const timeout = parseInt('${{ inputs.timeout }}') * 1000;
-              const searchString = `${{ inputs.log_check }}`;
+              const containerName = core.getInput('container_name');
+              const searchString = core.getInput('log_check');
+              const timeout = parseInt(core.getInput('timeout')) * 1000;
               const childProcess = spawn('docker', ['logs', '-f', containerName]);
 
               let matchFound = false;
