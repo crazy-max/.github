@@ -7,6 +7,10 @@ permissions:
 on:
   workflow_call:
     inputs:
+      path:
+        required: false
+        type: string
+        default: .github
       version:
         required: false
         type: string
@@ -66,6 +70,7 @@ jobs:
         id: zizmor
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         env:
+          INPUT_PATH: ${{ inputs.path }}
           INPUT_COLLECT: ${{ inputs.collect }}
           INPUT_MIN-SEVERITY: ${{ inputs.min-severity }}
           INPUT_MIN-CONFIDENCE: ${{ inputs.min-confidence }}
@@ -80,6 +85,7 @@ jobs:
             const os = require('os');
             const path = require('path');
 
+            const inpPath = core.getInput('path');
             const inpCollect = core.getMultilineInput('collect');
             const inpMinSeverity = core.getInput('min-severity');
             const inpMinConfidence = core.getInput('min-confidence');
@@ -121,7 +127,7 @@ jobs:
               14: 'findings detected, highest severity is high'
             };
 
-            const exitCode = await exec.exec('zizmor', ['--format=github', ...args, './.github/'], {
+            const exitCode = await exec.exec('zizmor', ['--format=github', ...args, inpPath], {
               ignoreReturnCode: true
             });
             if (exitCode > 0 && exitCode < 11) {
@@ -130,7 +136,7 @@ jobs:
               return;
             }
 
-            const res = await exec.getExecOutput('zizmor', ['--format=sarif', ...args, './.github/'], {
+            const res = await exec.getExecOutput('zizmor', ['--format=sarif', ...args, inpPath], {
               ignoreReturnCode: true,
               silent: true
             });
