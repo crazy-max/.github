@@ -233,7 +233,6 @@ jobs:
         format:
           - packages
           - sarif
-          - sbom
           - spdx
     steps:
       -
