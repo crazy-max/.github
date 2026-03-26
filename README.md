@@ -340,8 +340,7 @@ if it contains new releases, so it's kept in sync with [https://github.com/gohug
 
 [`zizmor` reusable workflow](.github/workflows/zizmor.yml) scans GitHub Actions
 workflows under `.github` by default with [Zizmor](https://github.com/zizmorcore/zizmor)
-and uploads the SARIF report to GitHub code scanning. It also produces GitHub
-annotations and lets `zizmor` fail the job on findings based on severity.
+and uploads the SARIF report to GitHub code scanning.
 
 ```yaml
 name: ci
