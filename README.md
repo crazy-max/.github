@@ -339,7 +339,7 @@ if it contains new releases, so it's kept in sync with [https://github.com/gohug
 ### `zizmor`
 
 [`zizmor` reusable workflow](.github/workflows/zizmor.yml) scans GitHub Actions
-workflows under `./.github/` with [Zizmor](https://github.com/zizmorcore/zizmor)
+workflows under `.github` by default with [Zizmor](https://github.com/zizmorcore/zizmor)
 and uploads the SARIF report to GitHub code scanning. It also produces GitHub
 annotations and lets `zizmor` fail the job on findings based on severity.
 
@@ -368,19 +368,20 @@ jobs:
 
 Here are the main inputs for this reusable workflow:
 
-| Name                | Type   | Default | Description                                                            |
-|---------------------|--------|---------|------------------------------------------------------------------------|
-| `version`           | String |         | Install a specific zizmor version.                                     |
-| `collect`           | List   |         | Extra artifact collection modes passed as repeated `--collect=` flags. |
-| `min-severity`      | String |         | Minimum severity to report.                                            |
-| `min-confidence`    | String |         | Minimum confidence to report.                                          |
-| `persona`           | String |         | Zizmor persona to use for findings and output tuning.                  |
-| `offline`           | Bool   | `false` | Disable network access for audits.                                     |
-| `no-online-audits`  | Bool   | `false` | Skip online audits while keeping the rest of the scan enabled.         |
-| `strict-collection` | Bool   | `false` | Fail when artifact collection cannot be completed.                     |
+| Name                | Type   | Default   | Description                                                            |
+|---------------------|--------|-----------|------------------------------------------------------------------------|
+| `path`              | String | `.github` | Path passed to `zizmor` as the scan target.                            |
+| `version`           | String |           | Install a specific zizmor version.                                     |
+| `collect`           | List   |           | Extra artifact collection modes passed as repeated `--collect=` flags. |
+| `min-severity`      | String |           | Minimum severity to report.                                            |
+| `min-confidence`    | String |           | Minimum confidence to report.                                          |
+| `persona`           | String |           | Zizmor persona to use for findings and output tuning.                  |
+| `offline`           | Bool   | `false`   | Disable network access for audits.                                     |
+| `no-online-audits`  | Bool   | `false`   | Skip online audits while keeping the rest of the scan enabled.         |
+| `strict-collection` | Bool   | `false`   | Fail when artifact collection cannot be completed.                     |
 
 > [!NOTE]
-> This workflow scans the repository's `.github` directory, not the whole
-> codebase. It is meant to audit workflow and action usage.
+> This workflow scans `.github` by default, not the whole codebase. Override
+> `path` if you need to target a different workflow or action directory.
 
 You can find the list of available inputs directly in [the reusable workflow](.github/workflows/zizmor.yml).
