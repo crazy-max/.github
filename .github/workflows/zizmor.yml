@@ -73,7 +73,7 @@ jobs:
           INPUT_OFFLINE: ${{ inputs.offline }}
           INPUT_NO-ONLINE-AUDITS: ${{ inputs.no-online-audits }}
           INPUT_STRICT-COLLECTION: ${{ inputs.strict-collection }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         with:
           script: |
             const fs = require('fs');
@@ -88,7 +88,7 @@ jobs:
             const inpNoOnlineAudits = core.getBooleanInput('no-online-audits');
             const inpStrictCollection = core.getBooleanInput('strict-collection');
 
-            const args = ['--color=always', '--format=sarif'];
+            const args = ['--color=always'];
             for (const item of inpCollect) {
               args.push(`--collect=${item}`);
             }
@@ -110,14 +110,49 @@ jobs:
             if (inpStrictCollection) {
               args.push('--strict-collection');
             }
-            args.push('./.github/');
 
-            const res = await exec.getExecOutput('zizmor', args);
+            const exitCodeMessage = {
+              1: 'error during audit, consult zizmor output',
+              2: 'argument parsing failure, consult zizmor output',
+              3: 'no inputs were collected',
+              11: 'findings detected, highest severity is informational',
+              12: 'findings detected, highest severity is low',
+              13: 'findings detected, highest severity is medium',
+              14: 'findings detected, highest severity is high'
+            };
+
+            const exitCode = await exec.exec('zizmor', ['--format=github', ...args, './.github/'], {
+              ignoreReturnCode: true
+            });
+            if (exitCode > 0 && exitCode < 11) {
+              const details = exitCodeMessage[exitCode] || 'unexpected exit code, consult zizmor output';
+              core.setFailed(`zizmor exited with code ${exitCode}: ${details}`);
+              return;
+            }
+
+            const res = await exec.getExecOutput('zizmor', ['--format=sarif', ...args, './.github/'], {
+              ignoreReturnCode: true,
+              silent: true
+            });
+            if (res.exitCode !== 0) {
+              const details = exitCodeMessage[res.exitCode] || 'unexpected exit code, consult zizmor output';
+              core.setFailed(`zizmor SARIF run exited with code ${res.exitCode}: ${details}`);
+              return;
+            }
+
             const sarifPath = path.join(fs.mkdtempSync(path.join(process.env.RUNNER_TEMP || os.tmpdir(), 'zizmor-')), 'results.sarif');
             await fs.writeFileSync(sarifPath, res.stdout.trim());
             core.setOutput('sarif-path', sarifPath);
+
+            if (exitCode !== 0) {
+              const details = exitCodeMessage[exitCode] || 'unexpected exit code, consult zizmor output';
+              core.setFailed(`zizmor exited with code ${exitCode}: ${details}`);
+            } else {
+              core.info('zizmor completed successfully with no findings above the specified thresholds');
+            }
       -
         name: Upload SARIF report
+        if: ${{ always() && steps.zizmor.outputs.sarif-path != '' }}
         uses: github/codeql-action/upload-sarif@38697555549f1db7851b81482ff19f1fa5c4fedc # v4.34.1
         with:
           sarif_file: ${{ steps.zizmor.outputs.sarif-path }}
