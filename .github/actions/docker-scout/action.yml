@@ -17,7 +17,7 @@ inputs:
 
 outputs:
   result-file:
-    description: 'File output result'
+    description: 'Path to result file (only if format is not packages)'
     value: ${{ steps.run.outputs.result-file }}
 
 runs:
@@ -82,6 +82,10 @@ runs:
 
           // TODO: cache binary
 
-          const resultPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'docker-scout-action-')), 'result.txt');
-          core.setOutput('result-file', resultPath);
-          await exec.exec('docker', ['scout', 'cves', inpImage, '--format', inpFormat, `--output`, resultPath]);
+          const resultFile = path.join(fs.mkdtempSync(path.join(process.env.RUNNER_TEMP || os.tmpdir(), 'docker-scout-')), 'result.txt');
+          const args = ['scout', 'cves', inpImage, '--format', inpFormat];
+          if (inpFormat !== 'packages') {
+            args.push('--output', resultFile);
+            core.setOutput('result-file', resultFile);
+          }
+          await exec.exec('docker', args);
