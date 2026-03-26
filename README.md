@@ -137,7 +137,7 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       -
         name: Test
         run: |
@@ -209,7 +209,7 @@ jobs:
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ matrix.commit }}
 ```
@@ -271,7 +271,7 @@ jobs:
     steps:
       -
         name: Download
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: buildx-releases-json
           path: .
