@@ -233,6 +233,8 @@ jobs:
         format:
           - packages
           - sarif
+          - sbom
+          - spdx
     steps:
       -
         name: Checkout
@@ -251,7 +253,8 @@ jobs:
           image: registry://moby/buildkit:master
           format: ${{ matrix.format }}
       -
-        name: Print result
+        name: Check result file
+        if: ${{ matrix.format != 'packages' }}
         run: |
           set -x
           cat ${{ steps.scout.outputs.result-file }}

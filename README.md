@@ -110,7 +110,7 @@ jobs:
           image: alpine:latest
       -
         name: Upload SARIF report
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: ${{ steps.scout.outputs.result-file }}
 ```
