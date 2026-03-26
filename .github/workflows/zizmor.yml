@@ -94,7 +94,7 @@ jobs:
             const inpNoOnlineAudits = core.getBooleanInput('no-online-audits');
             const inpStrictCollection = core.getBooleanInput('strict-collection');
 
-            const args = ['--color=always'];
+            const args = ['--format=sarif', '--color=always'];
             for (const item of inpCollect) {
               args.push(`--collect=${item}`);
             }
@@ -116,6 +116,7 @@ jobs:
             if (inpStrictCollection) {
               args.push('--strict-collection');
             }
+            args.push(inpPath);
 
             const exitCodeMessage = {
               1: 'error during audit, consult zizmor output',
@@ -127,35 +128,18 @@ jobs:
               14: 'findings detected, highest severity is high'
             };
 
-            const exitCode = await exec.exec('zizmor', ['--format=github', ...args, inpPath], {
+            const res = await exec.getExecOutput('zizmor', args, {
               ignoreReturnCode: true
             });
-            if (exitCode > 0 && exitCode < 11) {
-              const details = exitCodeMessage[exitCode] || 'unexpected exit code, consult zizmor output';
-              core.setFailed(`zizmor exited with code ${exitCode}: ${details}`);
-              return;
-            }
-
-            const res = await exec.getExecOutput('zizmor', ['--format=sarif', ...args, inpPath], {
-              ignoreReturnCode: true,
-              silent: true
-            });
-            if (res.exitCode !== 0) {
+            if (res.exitCode > 0 && res.exitCode < 11) {
               const details = exitCodeMessage[res.exitCode] || 'unexpected exit code, consult zizmor output';
-              core.setFailed(`zizmor SARIF run exited with code ${res.exitCode}: ${details}`);
+              core.setFailed(`zizmor exited with code ${res.exitCode}: ${details}`);
               return;
             }
 
             const sarifPath = path.join(fs.mkdtempSync(path.join(process.env.RUNNER_TEMP || os.tmpdir(), 'zizmor-')), 'results.sarif');
             await fs.writeFileSync(sarifPath, res.stdout.trim());
             core.setOutput('sarif-path', sarifPath);
-
-            if (exitCode !== 0) {
-              const details = exitCodeMessage[exitCode] || 'unexpected exit code, consult zizmor output';
-              core.setFailed(`zizmor exited with code ${exitCode}: ${details}`);
-            } else {
-              core.info('zizmor completed successfully with no findings above the specified thresholds');
-            }
       -
         name: Upload SARIF report
         if: ${{ always() && steps.zizmor.outputs.sarif-path != '' }}
