@@ -71,6 +71,20 @@ jobs:
               return undefined;
             }
 
+            function normalizeVersion(version, tag) {
+              const valid = semver.valid(version);
+              if (valid) {
+                return valid;
+              }
+              const coerced = semver.coerce(version);
+              if (coerced) {
+                core.warning(`Coerced non-semver tag ${tag} to ${coerced.version} for comparison`);
+                return coerced.version;
+              }
+              core.warning(`Skipping release tag ${tag}, extracted version ${version} is not semver-compatible`);
+              return undefined;
+            }
+
             const inpRepository = core.getInput('repository');
             const inpFilename = core.getInput('filename');
             const inpPinLatest = core.getInput('pin_latest');
@@ -94,6 +108,10 @@ jobs:
             if (!latestVersion) {
               throw new Error(`Latest release tag ${res['latest'].tag_name} does not match any provided pattern`);
             }
+            const latestComparableVersion = normalizeVersion(latestVersion, res['latest'].tag_name);
+            if (!latestComparableVersion) {
+              throw new Error(`Latest release tag ${res['latest'].tag_name} is not semver-compatible`);
+            }
 
             const releases = await github.paginate(github.rest.repos.listReleases.endpoint.merge({
               owner,
@@ -107,8 +125,9 @@ jobs:
               if (!version) {
                 continue;
               }
+              const comparableVersion = normalizeVersion(version, release.tag_name);
               if (!res['edge'] && release.prerelease) {
-                if (semver.gt(version, latestVersion)) {
+                if (comparableVersion && semver.gt(comparableVersion, latestComparableVersion)) {
                   res['edge'] = {
                     id: release.id,
                     tag_name: release.tag_name,
