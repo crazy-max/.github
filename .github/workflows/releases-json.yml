@@ -24,6 +24,9 @@ on:
       tag_patterns:
         required: false
         type: string
+    secrets:
+      github-token:
+        required: false
 
 jobs:
   generate:
@@ -50,6 +53,7 @@ jobs:
           INPUT_TAG_PATTERNS: ${{ inputs.tag_patterns }}
         with:
           retries: 3
+          github-token: ${{ secrets.github-token || github.token }}
           script: |
             const fs = require('fs');
             const semver = require('semver');
