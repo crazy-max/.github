@@ -246,8 +246,10 @@ jobs:
 
 [`releases-json` reusable workflow](.github/workflows/releases-json.yml)
 generates a JSON file with the list of releases for a given repository. Releases
-tags should be [semver](https://semver.org/) compliant and should not contain
-`latest` or `edge` tags that are handled internally by this action.
+tags should ideally be [semver](https://semver.org/) compliant and should not
+contain `latest` or `edge` tags that are handled internally by this action.
+Non-compliant tags are coerced when possible for version comparison, otherwise
+they are skipped for `edge` resolution.
 
 ```yaml
 name: ci
