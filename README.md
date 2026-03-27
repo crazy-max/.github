@@ -262,7 +262,6 @@ jobs:
       repository: docker/buildx
       artifact_name: buildx-releases-json
       filename: buildx-releases.json
-    secrets: inherit
 
   releases-json-check:
     runs-on: ubuntu-latest
