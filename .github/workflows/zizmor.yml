@@ -10,7 +10,7 @@ on:
       path:
         required: false
         type: string
-        default: .github
+        default: .
       version:
         required: false
         type: string
