@@ -23,7 +23,6 @@ jobs:
       security-events: write
     with:
       version: v1.22.0
-      path: .
       min-severity: medium
       min-confidence: medium
       persona: pedantic
