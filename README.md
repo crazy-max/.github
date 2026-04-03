@@ -254,6 +254,9 @@ they are skipped for `edge` resolution.
 ```yaml
 name: ci
 
+permissions:
+  contents: read
+
 on:
   push:
 
@@ -347,6 +350,7 @@ and uploads the SARIF report to GitHub code scanning.
 name: ci
 
 permissions:
+  actions: read
   contents: read
 
 on:
@@ -357,6 +361,7 @@ jobs:
   zizmor:
     uses: crazy-max/.github/.github/workflows/zizmor.yml@v1
     permissions:
+      actions: read
       contents: read
       security-events: write
     with:
