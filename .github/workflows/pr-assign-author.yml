@@ -1,17 +1,11 @@
 name: pr-assign-author
 
-permissions:
-  contents: read
-
 on:
   workflow_call:
 
 jobs:
   assign-author:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
     steps:
       -
         name: Assigning author to PR

@@ -1,9 +1,5 @@
 name: zizmor
 
-permissions:
-  actions: read
-  contents: read
-
 on:
   workflow_call:
     inputs:
@@ -42,10 +38,6 @@ on:
 jobs:
   zizmor:
     runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
     steps:
       -
         name: Checkout

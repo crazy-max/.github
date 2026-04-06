@@ -1,8 +1,5 @@
 name: list-commits
 
-permissions:
-  contents: read
-
 on:
   workflow_call:
     inputs:
