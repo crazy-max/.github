@@ -34,6 +34,18 @@ on:
         required: false
         type: boolean
         default: false
+      github-app-client-id:
+        required: false
+        type: string
+      github-app-owner:
+        required: false
+        type: string
+      github-app-repositories:
+        required: false
+        type: string
+    secrets:
+      github-app-private-key:
+        required: false
 
 jobs:
   zizmor:
@@ -49,6 +61,32 @@ jobs:
         uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
         with:
           enable-cache: false
+      -
+        name: Resolve GitHub App authentication
+        id: github-app-auth
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          INPUT_GITHUB_APP_CLIENT_ID: ${{ inputs.github-app-client-id }}
+          INPUT_GITHUB_APP_PRIVATE_KEY: ${{ secrets.github-app-private-key }}
+        with:
+          script: |
+            const hasClientId = core.getInput('github-app-client-id') !== '';
+            const hasPrivateKey = core.getInput('github-app-private-key') !== '';
+            if (hasClientId !== hasPrivateKey) {
+              core.setFailed('input `github-app-client-id` and secret `github-app-private-key` must be provided together');
+              return;
+            }
+            core.setOutput('enabled', hasClientId ? 'true' : 'false');
+      -
+        name: Create GitHub App token
+        id: app-token
+        if: ${{ steps.github-app-auth.outputs.enabled == 'true' }}
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
+        with:
+          client-id: ${{ inputs.github-app-client-id }}
+          private-key: ${{ secrets.github-app-private-key }}
+          owner: ${{ inputs.github-app-owner }}
+          repositories: ${{ inputs.github-app-repositories }}
       -
         name: Install zizmor
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -71,7 +109,7 @@ jobs:
           INPUT_OFFLINE: ${{ inputs.offline }}
           INPUT_NO-ONLINE-AUDITS: ${{ inputs.no-online-audits }}
           INPUT_STRICT-COLLECTION: ${{ inputs.strict-collection }}
-          GH_TOKEN: ${{ github.token }}
+          ZIZMOR_GITHUB_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
         with:
           script: |
             const fs = require('fs');

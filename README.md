@@ -373,16 +373,54 @@ jobs:
 
 Here are the main inputs for this reusable workflow:
 
-| Name                | Type   | Default   | Description                                                            |
-|---------------------|--------|-----------|------------------------------------------------------------------------|
-| `path`              | String | `.`       | Path passed to `zizmor` as the scan target.                            |
-| `version`           | String |           | Install a specific zizmor version.                                     |
-| `collect`           | List   |           | Extra artifact collection modes passed as repeated `--collect=` flags. |
-| `min-severity`      | String |           | Minimum severity to report.                                            |
-| `min-confidence`    | String |           | Minimum confidence to report.                                          |
-| `persona`           | String |           | Zizmor persona to use for findings and output tuning.                  |
-| `offline`           | Bool   | `false`   | Disable network access for audits.                                     |
-| `no-online-audits`  | Bool   | `false`   | Skip online audits while keeping the rest of the scan enabled.         |
-| `strict-collection` | Bool   | `false`   | Fail when artifact collection cannot be completed.                     |
+| Name                      | Type   | Default | Description                                                                   |
+|---------------------------|--------|---------|-------------------------------------------------------------------------------|
+| `path`                    | String | `.`     | Path passed to `zizmor` as the scan target.                                   |
+| `version`                 | String |         | Install a specific zizmor version.                                            |
+| `collect`                 | List   |         | Extra artifact collection modes passed as repeated `--collect=` flags.        |
+| `min-severity`            | String |         | Minimum severity to report.                                                   |
+| `min-confidence`          | String |         | Minimum confidence to report.                                                 |
+| `persona`                 | String |         | Zizmor persona to use for findings and output tuning.                         |
+| `offline`                 | Bool   | `false` | Disable network access for audits.                                            |
+| `no-online-audits`        | Bool   | `false` | Skip online audits while keeping the rest of the scan enabled.                |
+| `strict-collection`       | Bool   | `false` | Fail when artifact collection cannot be completed.                            |
+| `github-app-client-id`    | String |         | GitHub App client ID used to mint an installation token for online audits.    |
+| `github-app-owner`        | String |         | Optional owner whose installation should be used when creating the app token. |
+| `github-app-repositories` | String |         | Optional comma or newline-separated repository list for the app token scope.  |
+
+Optional secret:
+
+| Name                     | Description                                                |
+|--------------------------|------------------------------------------------------------|
+| `github-app-private-key` | GitHub App private key paired with `github-app-client-id`. |
+
+When GitHub App credentials are provided, the workflow creates an installation
+token with [`actions/create-github-app-token`](https://github.com/actions/create-github-app-token)
+and passes it to `zizmor` for online audits. Otherwise it falls back to the
+default `${{ github.token }}`.
+
+This is useful when `zizmor` needs to resolve private actions or reusable
+workflows during online audits. The app installation needs read access to the
+repositories `zizmor` will inspect.
+
+Example with GitHub App authentication:
+
+```yaml
+jobs:
+  zizmor:
+    uses: crazy-max/.github/.github/workflows/zizmor.yml@v1
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    with:
+      github-app-client-id: ${{ vars.ZIZMOR_GITHUB_APP_CLIENT_ID }}
+      github-app-owner: ${{ github.repository_owner }}
+      github-app-repositories: |
+        private-actions
+        reusable-workflows
+    secrets:
+      github-app-private-key: ${{ secrets.ZIZMOR_GITHUB_APP_PRIVATE_KEY }}
+```
 
 You can find the list of available inputs directly in [the reusable workflow](.github/workflows/zizmor.yml).
