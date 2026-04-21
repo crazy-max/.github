@@ -3,9 +3,17 @@ name: 'Container logs check'
 description: 'Match a string in container logs for sanity check'
 
 inputs:
+  name:
+    description: 'Name of the Docker container or Swarm service to test'
+    required: false
+  type:
+    description: 'Target type to inspect, container or service'
+    required: false
+    default: "container"
   container_name:
-    description: 'Name of the container to test'
-    required: true
+    deprecationMessage: 'container_name is deprecated, use name instead'
+    description: 'Name of the Docker container to test'
+    required: false
   log_check:
     description: 'String to check in the logs'
     required: true
@@ -19,6 +27,8 @@ runs:
     -
       uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
       env:
+        INPUT_NAME: ${{ inputs.name }}
+        INPUT_TYPE: ${{ inputs.type }}
         INPUT_CONTAINER_NAME: ${{ inputs.container_name }}
         INPUT_LOG_CHECK: ${{ inputs.log_check }}
         INPUT_TIMEOUT: ${{ inputs.timeout }}
@@ -26,37 +36,93 @@ runs:
         script: |
           const { spawn } = require('child_process');
 
-          async function checkContainerLogs() {
+          function getTargetConfig() {
+            const type = core.getInput('type').trim().toLowerCase();
+            const name = core.getInput('name').trim() || core.getInput('container_name').trim();
+            if (!name) {
+              throw new Error('name is required, or set container_name for backward compatibility');
+            }
+            if (!['container', 'service'].includes(type)) {
+              throw new Error(`Unsupported target_type "${type}"`);
+            }
+            return {
+              name,
+              type,
+            };
+          }
+
+          async function checkContainerStatus(containerName) {
+            const res = await exec.getExecOutput('docker', ['container', 'inspect', '--format', '{{.State.Status}}', containerName], {
+              ignoreReturnCode: true,
+              silent: true
+            });
+            let err = '';
+            if (res.stderr.length > 0 && res.exitCode != 0) {
+              err = `Error while checking container status: ${res.stderr.trim()}`;
+            }
+            if (res.stdout.trim() !== 'running') {
+              err = `Container returned status "${res.stdout.trim()}"`;
+            }
+            return err;
+          }
+
+          async function checkServiceStatus(serviceName) {
+            const inspectRes = await exec.getExecOutput('docker', ['service', 'inspect', serviceName], {
+              ignoreReturnCode: true,
+              silent: true
+            });
+            if (inspectRes.stderr.length > 0 && inspectRes.exitCode != 0) {
+              return `Error while checking service status: ${inspectRes.stderr.trim()}`;
+            }
+            const res = await exec.getExecOutput('docker', ['service', 'ps', '--filter', 'desired-state=running', '--no-trunc', '--format', '{{json .}}', serviceName], {
+              ignoreReturnCode: true,
+              silent: true
+            });
+            if (res.stderr.length > 0 && res.exitCode != 0) {
+              return `Error while checking service tasks: ${res.stderr.trim()}`;
+            }
+            const tasks = res.stdout.split('\n').map((line) => line.trim()).filter(Boolean).map((line) => JSON.parse(line));
+            if (tasks.length === 0) {
+              return `Service "${serviceName}" has no running tasks`;
+            }
+            const pendingStates = ['new', 'allocated', 'pending', 'assigned', 'accepted', 'preparing', 'ready', 'starting', 'running'];
+            if (tasks.some((task) => pendingStates.some((state) => task.CurrentState.toLowerCase().startsWith(state)))) {
+              return '';
+            }
+            const taskStates = tasks.map((task) => {
+              const details = [`${task.Name}: ${task.CurrentState}`];
+              if (task.Error) {
+                details.push(`error=${task.Error}`);
+              }
+              return details.join(', ');
+            });
+            return `Service tasks are not running: ${taskStates.join('; ')}`;
+          }
+
+          async function checkLogs() {
             return new Promise((resolve, reject) => {
-              const containerName = core.getInput('container_name');
+              const { name, type } = getTargetConfig();
               const searchString = core.getInput('log_check');
               const timeout = parseInt(core.getInput('timeout')) * 1000;
-              const childProcess = spawn('docker', ['logs', '-f', containerName]);
+              const statusLabel = type === 'service' ? 'service' : 'container';
+              const statusCheck = type === 'service' ? checkServiceStatus : checkContainerStatus;
+              const logArgs = type === 'service' ? ['service', 'logs', '-f', name] : ['logs', '-f', name];
+              const childProcess = spawn('docker', logArgs);
 
               let matchFound = false;
+              let intervalId;
 
               const timeoutId = setTimeout(() => {
                 if (!matchFound) {
                   clearInterval(intervalId);
                   childProcess.kill();
-                  reject(`String "${searchString}" not found in container logs within ${timeout / 1000} seconds`);
+                  reject(`String "${searchString}" not found in ${statusLabel} logs within ${timeout / 1000} seconds`);
                 }
               }, timeout);
 
-              // create an async function to check the container status
-              async function checkContainerStatus() {
-                const res = await exec.getExecOutput('docker', ['container', 'inspect', '--format', '{{.State.Status}}', containerName], {
-                  ignoreReturnCode: true,
-                  silent: true
-                });
-                let err = '';
-                if (res.stderr.length > 0 && res.exitCode != 0) {
-                  err = `Error while checking container status: ${res.stderr}`;
-                }
-                if (res.stdout.trim() !== 'running') {
-                  err = `Container returned status "${res.stdout.trim()}"`;
-                }
-                if (err) {
+              async function checkTargetStatus() {
+                const err = await statusCheck(name);
+                if (err.length > 0) {
                   clearInterval(intervalId);
                   clearTimeout(timeoutId);
                   childProcess.kill();
@@ -68,13 +134,13 @@ runs:
                 const lines = streamData.toString().split('\n');
                 for (const line of lines) {
                   if (line.trim() !== '') {
-                    await core.info(line);
+                    core.info(line);
                     if (line.includes(searchString)) {
                       matchFound = true;
                       clearInterval(intervalId);
                       clearTimeout(timeoutId);
                       childProcess.kill();
-                      resolve(`🎉 Found "${searchString}" in container logs`);
+                      resolve(`🎉 Found "${searchString}" in ${statusLabel} logs`);
                     }
                   }
                 }
@@ -83,20 +149,11 @@ runs:
               childProcess.stdout.on('data', handleStreamData);
               childProcess.stderr.on('data', handleStreamData);
 
-              // pause the stream if the string hasn't been found yet to prevent unnecessary processing
-              if (!matchFound) {
-                childProcess.stdout.pause();
-                setTimeout(() => {
-                  childProcess.stdout.resume();
-                }, 500);
-              }
-
-              // start checking the container status every 5 seconds
-              const intervalId = setInterval(checkContainerStatus, 5000);
+              intervalId = setInterval(checkTargetStatus, 5000);
             });
           }
 
-          checkContainerLogs()
+          checkLogs()
             .then((message) => {
               core.info(message);
             })
