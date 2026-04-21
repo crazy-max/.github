@@ -66,8 +66,8 @@ jobs:
         id: github-app-auth
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          INPUT_GITHUB_APP_CLIENT_ID: ${{ inputs.github-app-client-id }}
-          INPUT_GITHUB_APP_PRIVATE_KEY: ${{ secrets.github-app-private-key }}
+          INPUT_GITHUB-APP-CLIENT-ID: ${{ inputs.github-app-client-id }}
+          INPUT_GITHUB-APP-PRIVATE-KEY: ${{ secrets.github-app-private-key }}
         with:
           script: |
             const hasClientId = core.getInput('github-app-client-id') !== '';
