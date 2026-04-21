@@ -186,7 +186,7 @@ jobs:
         name: Check container logs
         uses: ./.github/actions/container-logs-check
         with:
-          container_name: test
+          name: test
           log_check: " started."
           timeout: 20
 
@@ -206,7 +206,7 @@ jobs:
         continue-on-error: true
         uses: ./.github/actions/container-logs-check
         with:
-          container_name: test
+          name: test
           log_check: " foo."
           timeout: 10
       -
@@ -233,7 +233,7 @@ jobs:
         continue-on-error: true
         uses: ./.github/actions/container-logs-check
         with:
-          container_name: test
+          name: test
           log_check: " foo."
           timeout: 10
       -
@@ -243,6 +243,34 @@ jobs:
             echo "::error::Should have failed"
             exit 1
           fi
+
+  container-logs-check-service:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      -
+        name: Init swarm
+        run: |
+          docker swarm init --advertise-addr "$(hostname -I | awk '{print $1}')"
+      -
+        name: Run service
+        run: |
+          docker service create --name test busybox sh -c "echo 'service ready' && sleep 600"
+      -
+        name: Check service logs
+        uses: ./.github/actions/container-logs-check
+        with:
+          name: test
+          type: service
+          log_check: "service ready"
+          timeout: 30
+      -
+        name: Leave swarm
+        if: ${{ always() }}
+        run: |
+          docker swarm leave --force
 
   docker-scout:
     runs-on: ubuntu-latest

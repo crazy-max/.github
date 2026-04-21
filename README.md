@@ -25,8 +25,8 @@ ___
 ### `container-logs-check`
 
 [`container-logs-check` composite action](.github/actions/container-logs-check/action.yml)
-checks for a string in container logs. This can be used as a _poor man's_ e2e
-testing for containers.
+checks for a string in a Docker container or Swarm service logs. This can be
+used as a _poor man's_ e2e testing helper for long-running Docker workloads.
 
 ```yaml
 name: test
@@ -49,7 +49,7 @@ jobs:
         name: Check container logs
         uses: crazy-max/.github/.github/actions/container-logs-check@v1
         with:
-          container_name: test
+          name: test
           log_check: " started."
           timeout: 20
 ```
@@ -78,6 +78,19 @@ Creating share foo
   wide links = Yes
 smbd version 4.18.2 started.
 🎉 Found " started." in container logs
+```
+
+Swarm service example:
+
+```yaml
+      -
+        name: Check service logs
+        uses: crazy-max/.github/.github/actions/container-logs-check@v1
+        with:
+          name: swarm-cronjob
+          type: service
+          log_check: "Number of cronjob tasks: 7"
+          timeout: 120
 ```
 
 ### `docker-scout`
