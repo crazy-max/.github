@@ -88,6 +88,8 @@ jobs:
           private-key: ${{ secrets.github-app-private-key }}
           owner: ${{ inputs.github-app-owner }}
           repositories: ${{ inputs.github-app-repositories }}
+          permission-actions: read
+          permission-contents: read
       -
         name: Install zizmor
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
