@@ -2,7 +2,9 @@ version: 2
 updates:
   - package-ecosystem: "github-actions"
     open-pull-requests-limit: 10
-    directory: "/"
+    directories:
+      - "/"
+      - "/.github/actions/*"
     schedule:
       interval: "daily"
     cooldown:
