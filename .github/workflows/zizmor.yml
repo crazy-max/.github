@@ -10,6 +10,7 @@ on:
       version:
         required: false
         type: string
+        default: latest
       collect:
         required: false
         type: string
@@ -95,7 +96,18 @@ jobs:
         with:
           script: |
             const inpVersion = core.getInput('version');
-            await exec.exec('uv', ['tool', 'install', `zizmor${inpVersion ? `@${inpVersion}` : ''}`]);
+            const toolSpec = inpVersion === 'latest' ? 'zizmor' : `zizmor@${inpVersion}`;
+            await exec.exec('uv', [
+              'tool',
+              'install',
+              '--no-build',
+              '--no-cache',
+              '--no-config',
+              '--no-managed-python',
+              '--no-progress',
+              '--no-python-downloads',
+              toolSpec
+            ]);
       -
         name: Run zizmor
         id: zizmor
