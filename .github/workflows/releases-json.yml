@@ -36,7 +36,18 @@ jobs:
         with:
           script: |
             await core.group(`Install npm deps`, async () => {
-              await exec.exec('npm', ['install', 'semver']);
+              await exec.exec('npm', [
+                'install',
+                '--loglevel=error',
+                '--no-save',
+                '--package-lock=false',
+                '--ignore-scripts',
+                '--omit=dev',
+                '--prefer-offline',
+                '--fund=false',
+                '--audit=false',
+                'semver@7.8.2'
+              ]);
             });
       -
         name: Generate
