@@ -174,21 +174,50 @@ jobs:
 
   container-logs-check:
     runs-on: ubuntu-latest
+    services:
+      cloudflared:
+        image: crazymax/cloudflared:latest@sha256:9b4e856d18f6f6367330c56d91452f5fe3b6bd235f1210dcd9f6bd7373cad9be
+        options: >-
+          --label "diun.enable=true"
+          --label "diun.watch_repo=true"
     steps:
       -
         name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       -
-        name: Run container
+        name: Create Diun config
         run: |
-          docker run -d --name test crazymax/samba:latest
+          cat > diun.yml <<'EOF'
+          watch:
+            workers: 20
+            schedule: "0 */6 * * *"
+            jitter: 5m
+
+          providers:
+            docker:
+              watchByDefault: true
+          EOF
+      -
+        name: Run Diun
+        run: |
+          docker run -d --name diun \
+            --health-cmd "diun healthcheck" \
+            --health-interval 30s \
+            --health-timeout 5s \
+            --health-retries 3 \
+            --health-start-period 60s \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$(pwd)/diun.yml:/diun.yml:ro" \
+            -e "TZ=Europe/Paris" \
+            -e "LOG_LEVEL=info" \
+            crazymax/diun:latest
       -
         name: Check container logs
         uses: ./.github/actions/container-logs-check
         with:
-          name: test
-          log_check: " started."
-          timeout: 20
+          name: diun
+          log_check: "Next run in"
+          timeout: 240
 
   container-logs-check-notfound:
     runs-on: ubuntu-latest
@@ -257,7 +286,15 @@ jobs:
       -
         name: Run service
         run: |
-          docker service create --name test busybox sh -c "echo 'service ready' && sleep 600"
+          docker service create --name test busybox sh -c '
+            i=1
+            while [ "$i" -le 100 ]; do
+              echo "service log $i"
+              i=$((i + 1))
+            done
+            echo "service ready"
+            sleep 600
+          '
       -
         name: Check service logs
         uses: ./.github/actions/container-logs-check

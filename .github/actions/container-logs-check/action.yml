@@ -107,47 +107,85 @@ runs:
               const statusLabel = type === 'service' ? 'service' : 'container';
               const statusCheck = type === 'service' ? checkServiceStatus : checkContainerStatus;
               const logArgs = type === 'service' ? ['service', 'logs', '-f', name] : ['logs', '-f', name];
-              const childProcess = spawn('docker', logArgs);
+              const childProcess = spawn('sh', ['-c', 'exec docker "$@" 2>&1', 'docker', ...logArgs]);
 
-              let matchFound = false;
+              let settled = false;
               let intervalId;
+              let logBuffer = '';
+
+              function cleanup() {
+                clearInterval(intervalId);
+                clearTimeout(timeoutId);
+                childProcess.stdout.off('data', handleStdoutData);
+                childProcess.stdout.destroy();
+                childProcess.kill();
+              }
+
+              function resolveOnce(message) {
+                if (settled) {
+                  return;
+                }
+                settled = true;
+                cleanup();
+                resolve(message);
+              }
+
+              function rejectOnce(error) {
+                if (settled) {
+                  return;
+                }
+                settled = true;
+                cleanup();
+                reject(error);
+              }
 
               const timeoutId = setTimeout(() => {
-                if (!matchFound) {
-                  clearInterval(intervalId);
-                  childProcess.kill();
-                  reject(`String "${searchString}" not found in ${statusLabel} logs within ${timeout / 1000} seconds`);
+                if (!settled) {
+                  rejectOnce(`String "${searchString}" not found in ${statusLabel} logs within ${timeout / 1000} seconds`);
                 }
               }, timeout);
 
               async function checkTargetStatus() {
                 const err = await statusCheck(name);
                 if (err.length > 0) {
-                  clearInterval(intervalId);
-                  clearTimeout(timeoutId);
-                  childProcess.kill();
-                  reject(err);
+                  rejectOnce(err);
                 }
               }
 
-              const handleStreamData = async (streamData) => {
-                const lines = streamData.toString().split('\n');
-                for (const line of lines) {
-                  if (line.trim() !== '') {
-                    core.info(line);
-                    if (line.includes(searchString)) {
-                      matchFound = true;
-                      clearInterval(intervalId);
-                      clearTimeout(timeoutId);
-                      childProcess.kill();
-                      resolve(`🎉 Found "${searchString}" in ${statusLabel} logs`);
-                    }
+              function handleLogLine(line) {
+                if (settled) {
+                  return;
+                }
+                if (line.trim() !== '') {
+                  core.info(line);
+                  if (line.includes(searchString)) {
+                    resolveOnce(`🎉 Found "${searchString}" in ${statusLabel} logs`);
                   }
                 }
-              };
+              }
 
-              childProcess.stdout.on('data', handleStreamData);
-              childProcess.stderr.on('data', handleStreamData);
+              function handleStdoutData(streamData) {
+                logBuffer += streamData.toString();
+                const lines = logBuffer.split('\n');
+                logBuffer = lines.pop();
+                for (const line of lines) {
+                  handleLogLine(line.replace(/\r$/, ''));
+                }
+              }
+
+              childProcess.stdout.on('data', handleStdoutData);
+              childProcess.on('error', (err) => {
+                rejectOnce(`Failed to read ${statusLabel} logs: ${err.message}`);
+              });
+              childProcess.on('close', () => {
+                if (logBuffer) {
+                  handleLogLine(logBuffer.replace(/\r$/, ''));
+                  logBuffer = '';
+                }
+                if (!settled) {
+                  rejectOnce(`Log stream closed before finding "${searchString}" in ${statusLabel} logs`);
+                }
+              });
 
               intervalId = setInterval(checkTargetStatus, 5000);
             });
