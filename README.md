@@ -386,20 +386,20 @@ jobs:
 
 Here are the main inputs for this reusable workflow:
 
-| Name                      | Type   | Default | Description                                                                   |
-|---------------------------|--------|---------|-------------------------------------------------------------------------------|
-| `path`                    | String | `.`     | Path passed to `zizmor` as the scan target.                                   |
-| `version`                 | String |         | Install a specific zizmor version.                                            |
-| `collect`                 | List   |         | Extra artifact collection modes passed as repeated `--collect=` flags.        |
-| `min-severity`            | String |         | Minimum severity to report.                                                   |
-| `min-confidence`          | String |         | Minimum confidence to report.                                                 |
-| `persona`                 | String |         | Zizmor persona to use for findings and output tuning.                         |
-| `offline`                 | Bool   | `false` | Disable network access for audits.                                            |
-| `no-online-audits`        | Bool   | `false` | Skip online audits while keeping the rest of the scan enabled.                |
-| `strict-collection`       | Bool   | `false` | Fail when artifact collection cannot be completed.                            |
-| `github-app-client-id`    | String |         | GitHub App client ID used to mint an installation token for online audits.    |
-| `github-app-owner`        | String |         | Optional owner whose installation should be used when creating the app token. |
-| `github-app-repositories` | String |         | Optional comma or newline-separated repository list for the app token scope.  |
+| Name                      | Type   | Default  | Description                                                                   |
+|---------------------------|--------|----------|-------------------------------------------------------------------------------|
+| `path`                    | String | `.`      | Path passed to `zizmor` as the scan target.                                   |
+| `version`                 | String | `latest` | Install `latest` or a specific zizmor version.                                |
+| `collect`                 | List   |          | Extra artifact collection modes passed as repeated `--collect=` flags.        |
+| `min-severity`            | String |          | Minimum severity to report.                                                   |
+| `min-confidence`          | String |          | Minimum confidence to report.                                                 |
+| `persona`                 | String |          | Zizmor persona to use for findings and output tuning.                         |
+| `offline`                 | Bool   | `false`  | Disable network access for audits.                                            |
+| `no-online-audits`        | Bool   | `false`  | Skip online audits while keeping the rest of the scan enabled.                |
+| `strict-collection`       | Bool   | `false`  | Fail when artifact collection cannot be completed.                            |
+| `github-app-client-id`    | String |          | GitHub App client ID used to mint an installation token for online audits.    |
+| `github-app-owner`        | String |          | Optional owner whose installation should be used when creating the app token. |
+| `github-app-repositories` | String |          | Optional comma or newline-separated repository list for the app token scope.  |
 
 Optional secret:
 
