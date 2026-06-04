@@ -172,6 +172,37 @@ jobs:
         with:
           ref: ${{ matrix.commit }}
 
+  gotest-annotations:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      -
+        name: Create test report
+        run: |
+          mkdir -p pkg/foo test-results
+          for _ in $(seq 1 12); do
+            echo "// fixture"
+          done > pkg/foo/foo_test.go
+          cat > test-results/report.json <<'EOF'
+          {"Action":"output","Package":"github.com/docker/example/pkg/foo","Test":"TestBroken","Output":"    foo_test.go:12: expected ok\n"}
+          {"Action":"output","Package":"github.com/docker/example/pkg/foo","Test":"TestBroken","Output":"--- FAIL: TestBroken (0.00s)\n"}
+          EOF
+      -
+        name: Annotate failed tests
+        id: annotate
+        uses: ./.github/actions/gotest-annotations
+        with:
+          directory: test-results
+      -
+        name: Check annotations
+        run: |
+          if [ "${{ steps.annotate.outputs.annotations }}" != "1" ]; then
+            echo "::error::Expected 1 annotation, got ${{ steps.annotate.outputs.annotations }}"
+            exit 1
+          fi
+
   container-logs-check:
     runs-on: ubuntu-latest
     services:
