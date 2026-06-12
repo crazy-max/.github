@@ -413,8 +413,8 @@ and passes it to `zizmor` for online audits. Otherwise it falls back to the
 default `${{ github.token }}`.
 
 This is useful when `zizmor` needs to resolve private actions or reusable
-workflows during online audits. The app installation needs `actions: read` and
-`contents: read` access to the repositories `zizmor` will inspect.
+workflows during online audits. The app installation needs `contents: read`
+access to the repositories `zizmor` will inspect.
 
 Example with GitHub App authentication:
 

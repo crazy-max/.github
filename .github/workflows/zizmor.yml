@@ -88,7 +88,6 @@ jobs:
           private-key: ${{ secrets.github-app-private-key }}
           owner: ${{ inputs.github-app-owner }}
           repositories: ${{ inputs.github-app-repositories }}
-          permission-actions: read
           permission-contents: read
       -
         name: Install zizmor
