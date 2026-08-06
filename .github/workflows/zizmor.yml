@@ -23,7 +23,18 @@ on:
       persona:
         required: false
         type: string
+      config:
+        required: false
+        type: string
       offline:
+        required: false
+        type: boolean
+        default: false
+      no-config:
+        required: false
+        type: boolean
+        default: false
+      no-ignores:
         required: false
         type: boolean
         default: false
@@ -35,6 +46,9 @@ on:
         required: false
         type: boolean
         default: false
+      gh-hostname:
+        required: false
+        type: string
       github-app-client-id:
         required: false
         type: string
@@ -119,9 +133,13 @@ jobs:
           INPUT_MIN-SEVERITY: ${{ inputs.min-severity }}
           INPUT_MIN-CONFIDENCE: ${{ inputs.min-confidence }}
           INPUT_PERSONA: ${{ inputs.persona }}
+          INPUT_CONFIG: ${{ inputs.config }}
           INPUT_OFFLINE: ${{ inputs.offline }}
+          INPUT_NO-CONFIG: ${{ inputs.no-config }}
+          INPUT_NO-IGNORES: ${{ inputs.no-ignores }}
           INPUT_NO-ONLINE-AUDITS: ${{ inputs.no-online-audits }}
           INPUT_STRICT-COLLECTION: ${{ inputs.strict-collection }}
+          INPUT_GH-HOSTNAME: ${{ inputs.gh-hostname }}
           ZIZMOR_GITHUB_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
         with:
           script: |
@@ -134,9 +152,13 @@ jobs:
             const inpMinSeverity = core.getInput('min-severity');
             const inpMinConfidence = core.getInput('min-confidence');
             const inpPersona = core.getInput('persona');
+            const inpConfig = core.getInput('config');
             const inpOffline = core.getBooleanInput('offline');
+            const inpNoConfig = core.getBooleanInput('no-config');
+            const inpNoIgnores = core.getBooleanInput('no-ignores');
             const inpNoOnlineAudits = core.getBooleanInput('no-online-audits');
             const inpStrictCollection = core.getBooleanInput('strict-collection');
+            const inpGhHostname = core.getInput('gh-hostname');
 
             const args = ['--format=sarif', '--color=always'];
             for (const item of inpCollect) {
@@ -151,14 +173,26 @@ jobs:
             if (inpPersona) {
               args.push(`--persona=${inpPersona}`);
             }
+            if (inpConfig) {
+              args.push(`--config=${inpConfig}`);
+            }
             if (inpOffline) {
               args.push('--offline');
+            }
+            if (inpNoConfig) {
+              args.push('--no-config');
+            }
+            if (inpNoIgnores) {
+              args.push('--no-ignores');
             }
             if (inpNoOnlineAudits) {
               args.push('--no-online-audits');
             }
             if (inpStrictCollection) {
               args.push('--strict-collection');
+            }
+            if (inpGhHostname) {
+              args.push(`--gh-hostname=${inpGhHostname}`);
             }
             args.push(inpPath);
 
@@ -171,11 +205,12 @@ jobs:
               13: 'findings detected, highest severity is medium',
               14: 'findings detected, highest severity is high'
             };
+            const findingExitCodes = new Set([11, 12, 13, 14]);
 
             const res = await exec.getExecOutput('zizmor', args, {
               ignoreReturnCode: true
             });
-            if (res.exitCode > 0 && res.exitCode < 11) {
+            if (res.exitCode !== 0 && !findingExitCodes.has(res.exitCode)) {
               const details = exitCodeMessage[res.exitCode] || 'unexpected exit code, consult zizmor output';
               core.setFailed(`zizmor exited with code ${res.exitCode}: ${details}`);
               return;
