@@ -394,9 +394,13 @@ Here are the main inputs for this reusable workflow:
 | `min-severity`            | String |          | Minimum severity to report.                                                   |
 | `min-confidence`          | String |          | Minimum confidence to report.                                                 |
 | `persona`                 | String |          | Zizmor persona to use for findings and output tuning.                         |
+| `config`                  | String |          | Explicit zizmor configuration file path.                                      |
 | `offline`                 | Bool   | `false`  | Disable network access for audits.                                            |
+| `no-config`               | Bool   | `false`  | Disable zizmor configuration loading.                                         |
+| `no-ignores`              | Bool   | `false`  | Do not honor ignore comments or ignore rules in configuration.                |
 | `no-online-audits`        | Bool   | `false`  | Skip online audits while keeping the rest of the scan enabled.                |
 | `strict-collection`       | Bool   | `false`  | Fail when artifact collection cannot be completed.                            |
+| `gh-hostname`             | String |          | GitHub hostname passed to `zizmor` for GitHub Enterprise scans.               |
 | `github-app-client-id`    | String |          | GitHub App client ID used to mint an installation token for online audits.    |
 | `github-app-owner`        | String |          | Optional owner whose installation should be used when creating the app token. |
 | `github-app-repositories` | String |          | Optional comma or newline-separated repository list for the app token scope.  |
