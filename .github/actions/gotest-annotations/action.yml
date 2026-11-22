@@ -39,7 +39,7 @@ runs:
               const testName = currentLine.Test;
               let output = currentLine.Output;
               if (!testName || !output) {
-                return;
+                continue;
               }
               const packageName = currentLine.Package.split("/").slice(3).join("/");
               const key = `${packageName}/${testName}`;

@@ -186,8 +186,13 @@ jobs:
             echo "// fixture"
           done > pkg/foo/foo_test.go
           cat > test-results/report.json <<'EOF'
+          {"Action":"start","Package":"github.com/docker/example/pkg/foo"}
+          {"Action":"run","Package":"github.com/docker/example/pkg/foo","Test":"TestBroken"}
           {"Action":"output","Package":"github.com/docker/example/pkg/foo","Test":"TestBroken","Output":"    foo_test.go:12: expected ok\n"}
           {"Action":"output","Package":"github.com/docker/example/pkg/foo","Test":"TestBroken","Output":"--- FAIL: TestBroken (0.00s)\n"}
+          {"Action":"fail","Package":"github.com/docker/example/pkg/foo","Test":"TestBroken"}
+          {"Action":"output","Package":"github.com/docker/example/pkg/foo","Output":"FAIL\n"}
+          {"Action":"fail","Package":"github.com/docker/example/pkg/foo"}
           EOF
       -
         name: Annotate failed tests
